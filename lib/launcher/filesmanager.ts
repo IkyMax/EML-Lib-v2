@@ -6,7 +6,7 @@
 
 import { FullConfig } from '../../types/config'
 import { EMLLibError, ErrorType } from '../../types/errors'
-import { ExtraFile, File, Loader } from '../../types/file'
+import { ExtraFile, File, ILoader } from '../../types/file'
 import { Artifact, MinecraftManifest, Assets } from '../../types/manifest'
 import utils from '../utils/utils'
 import path_ from 'path'
@@ -19,9 +19,9 @@ import Java from '../java/java'
 export default class FilesManager extends EventEmitter<FilesManagerEvents> {
   private config: FullConfig
   private manifest: MinecraftManifest
-  private loader: Loader
+  private loader: ILoader
 
-  constructor(config: FullConfig, manifest: MinecraftManifest, loader: Loader) {
+  constructor(config: FullConfig, manifest: MinecraftManifest, loader: ILoader) {
     super()
     this.config = config
     this.manifest = manifest

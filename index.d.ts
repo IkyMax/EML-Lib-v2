@@ -22,25 +22,25 @@ import Launcher from './lib/launcher/launcher'
  * 
  * **Recommandations:** 
  * - To get all the capacities of this Node.js library, you must set up your
- * [EML AdminTool](https://github.com/Electron-Minecraft-Launcher/EML-AdminTool-v2) website!
+ * [EML AdminTool `v2.0.0-beta.3`](https://github.com/Electron-Minecraft-Launcher/EML-AdminTool-v2) website!
  * - If you don't want to use the EML AdminTool, you should rather use the
  * [Minecraft Launcher Core](https://npmjs.com/package/minecraft-launcher-core) library.
  *
  * ---
  * 
- * [Docs](https://github.com/Electron-Minecraft-Launcher/EML-Lib/wiki) —
+ * [Wiki](https://github.com/Electron-Minecraft-Launcher/EML-Lib/wiki) —
  * [GitHub](https://github.com/Electron-Minecraft-Launcher/EML-Lib-v2) —
  * [NPM](https://www.npmjs.com/package/eml-lib) —
  * [EML Website](https://electron-minecraft-launcher.ml)
  *
  * ---
  *
- * @version 2.0.0-beta.1
+ * @version 2.0.0-beta.2
  * @license MIT — See the `LICENSE` file for more information
  * @copyright Copyright (c) 2024, GoldFrite
  */
 
-declare module EMLLib {
+declare namespace EMLLib {
   export { MicrosoftAuth, AzAuth, CrackAuth, Bootstraps, Maintenance, News, Background, ServerStatus, Java, Launcher }
 }
 

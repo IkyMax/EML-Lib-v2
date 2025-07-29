@@ -9,7 +9,7 @@ import EventEmitter from '../utils/events'
 import path_ from 'path'
 import { spawnSync } from 'child_process'
 import { EMLLibError, ErrorType } from '../../types/errors'
-import { Bootstraps as Bootstraps_ } from '../../types/bootstraps'
+import { IBootstraps } from '../../types/bootstraps'
 import { File } from '../../types/file'
 import { DownloaderEvents } from '../../types/events'
 
@@ -35,18 +35,15 @@ export default class Bootstraps extends EventEmitter<DownloaderEvents> {
    * @param currentVersion The current version of your Launcher. You can get it with `app.getVersion()`.
    * @returns If an update is available, it will return the Bootstraps object. If not, it will return `null`.
    */
-  async checkForUpdate(currentVersion: string) {
+  async checkForUpdate(currentVersion: string): Promise<IBootstraps | null> {
     let res = await fetch(`${this.url}/bootstraps`, { method: 'GET' })
       .then((res) => res.json())
       .catch((err) => {
         throw new EMLLibError(ErrorType.FETCH_ERROR, `Error while fetching Bootstrap from the EML AdminTool: ${err}`)
       })
 
-    if (res.data.version === currentVersion || res.data.version == null || res.data.version == '' || res.data[utils.getOS()] == null) {
-      return null
-    } else {
-      return res.data as Bootstraps_
-    }
+    if (res.version === currentVersion || res.version == null || res.version == '' || res[`${utils.getOS()}File`] == null) return null
+    else return res as IBootstraps
   }
 
   /**
@@ -56,9 +53,9 @@ export default class Bootstraps extends EventEmitter<DownloaderEvents> {
    * @param bootstraps The `Bootstraps` object returned by `Bootstraps.checkForUpdate()`.
    * @returns The path to the downloaded Bootstrap.
    */
-  async download(bootstraps: Bootstraps_) {
+  async download(bootstraps: IBootstraps): Promise<string> {
     const os = utils.getOS()
-    const bootstrap = bootstraps[os] as File | undefined
+    const bootstrap = bootstraps[`${os}File`] as File | undefined
 
     if (!bootstrap) {
       throw new EMLLibError(ErrorType.FILE_ERROR, 'Not available for this operating system')

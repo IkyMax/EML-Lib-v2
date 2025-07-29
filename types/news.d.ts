@@ -1,4 +1,4 @@
-export interface News {
+export interface INews {
   id?: number
   title: string
   content: string
@@ -9,17 +9,17 @@ export interface News {
   tags?: number[] | string
 }
 
-export interface NewsCategory {
+export interface INewsCategory {
   id?: number
   title: string
   date: string
 }
 
-export interface NewsCategoryRes extends NewsCategory {
-  news: News[]
+export interface NewsCategoryRes extends INewsCategory {
+  news: INews[]
 }
 
-export interface NewsTag {
+export interface INewsTag {
   id?: number
   title: string
   color: string

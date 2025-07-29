@@ -4,22 +4,21 @@
  */
 
 import { FullConfig } from '../../../types/config'
-import { ExtraFile, File, Loader } from '../../../types/file'
+import { ExtraFile, File, ILoader } from '../../../types/file'
 import { Artifact, MinecraftManifest } from '../../../types/manifest'
 import AdmZip from 'adm-zip'
 import fs from 'fs'
 import path_ from 'path'
 import utils from '../../utils/utils'
-import { EMLLibError, ErrorType } from '../../../types/errors'
 import EventEmitter from '../../utils/events'
 import { FilesManagerEvents } from '../../../types/events'
 
 export default class ForgeLoader extends EventEmitter<FilesManagerEvents> {
   private config: FullConfig
   private manifest: MinecraftManifest
-  private loader: Loader
+  private loader: ILoader
 
-  constructor(config: FullConfig, manifest: MinecraftManifest, loader: Loader) {
+  constructor(config: FullConfig, manifest: MinecraftManifest, loader: ILoader) {
     super()
     this.config = config
     this.manifest = manifest
@@ -39,7 +38,7 @@ export default class ForgeLoader extends EventEmitter<FilesManagerEvents> {
 
     if (!fs.existsSync(forgePath)) fs.mkdirSync(forgePath, { recursive: true })
 
-    return this.loader.loader_type !== 'installer' ? this.extractZip(forgePath, minecraftPath, zip, jar) : await this.extractJar(forgePath, zip)
+    return this.loader.format !== 'INSTALLER' ? this.extractZip(forgePath, minecraftPath, zip, jar) : await this.extractJar(forgePath, zip)
   }
 
   private extractZip(forgePath: string, minecraftPath: string, zip: AdmZip, jar: AdmZip) {
@@ -56,7 +55,7 @@ export default class ForgeLoader extends EventEmitter<FilesManagerEvents> {
 
     jar.writeZip(path_.join(minecraftPath, `${this.manifest.id}.jar`))
 
-    const forgeManifest = { ...this.manifest, id: `forge-${this.loader.loader_version}`, libraries: [] }
+    const forgeManifest = { ...this.manifest, id: `forge-${this.loader.loaderVersion}`, libraries: [] }
 
     files.push({ name: `${forgeManifest.id}.json`, path: this.loader.file!.path, url: '', type: 'OTHER' })
     fs.writeFileSync(path_.join(forgePath, `${forgeManifest.id}.json`), JSON.stringify(forgeManifest, null, 2))
@@ -82,8 +81,8 @@ export default class ForgeLoader extends EventEmitter<FilesManagerEvents> {
       forgeManifest = JSON.parse(zip.getEntry(path_.basename(installProfile.json))?.getData().toString('utf8') + '')
     }
 
-    fs.writeFileSync(path_.join(forgePath, `forge-${this.loader.loader_version}.json`), JSON.stringify(forgeManifest, null, 2))
-    files.push({ name: `forge-${this.loader.loader_version}.json`, path: this.loader.file!.path, url: '', type: 'OTHER' })
+    fs.writeFileSync(path_.join(forgePath, `forge-${this.loader.loaderVersion}.json`), JSON.stringify(forgeManifest, null, 2))
+    files.push({ name: `forge-${this.loader.loaderVersion}.json`, path: this.loader.file!.path, url: '', type: 'OTHER' })
     i++
     this.emit('extract_progress', { filename: 'install_profile.json' })
 

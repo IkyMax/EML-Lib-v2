@@ -1,6 +1,6 @@
-export interface Maintenance {
+export interface IMaintenance {
   id?: number
-  start_date?: Date| null
-  end_date?: Date | null
-  reason?: string
+  startTime?: Date| null
+  endTime?: Date | null
+  message?: string
 }

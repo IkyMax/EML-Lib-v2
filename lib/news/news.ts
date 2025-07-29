@@ -4,7 +4,7 @@
  */
 
 import { EMLLibError, ErrorType } from '../../types/errors'
-import { News as News_, NewsCategory } from '../../types/news'
+import { INews, INewsCategory } from '../../types/news'
 
 /**
  * Manage the News of the Launcher.
@@ -25,36 +25,38 @@ export default class News {
    * Get all the news from the EML AdminTool.
    * @returns The list of News.
    */
-  async getNews() {
+  async getNews(): Promise<INews[]> {
     let res = await fetch(`${this.url}/news`, { method: 'GET' })
       .then((res) => res.json())
       .catch((err) => {
         throw new EMLLibError(ErrorType.FETCH_ERROR, `Error while fetching News from the EML AdminTool: ${err}`)
       })
 
-    return res.data as News_[]
+    return res.news
   }
 
   /**
    * Get all the News categories from the EML AdminTool.
    * @returns The list of News categories.
    */
-  async getCategories() {
+  async getCategories(): Promise<INewsCategory[]> {
     let res = await fetch(`${this.url}/news/categories`, { method: 'GET' })
       .then((res) => res.json())
       .catch((err) => {
         throw new EMLLibError(ErrorType.FETCH_ERROR, `Error while fetching News Categories from the EML AdminTool: ${err}`)
       })
 
-    return res.data as NewsCategory[]
+    return res.data
   }
 
   /**
    * Get the News of a specific category.
-   * @param categoryId The ID of the category (got from `News.getCategories()`).
-   * @returns The News if the category exists.
+   * @param id The ID of the category (got from `News.getCategories()`).
+   * @returns The News if the category.
+   * @deprecated Returns an empty array — Currently not used in the EML AdminTool, but may be used in the future. Please use `News.getNews().filter(...)` instead.
    */
-  async getNewsByCategory(categoryId: number) {
+  async getNewsByCategory(categoryId: number): Promise<INews[]> {
+    return [] // Currently not used in the EML AdminTool, but may be used in the future.
     let res = await fetch(`${this.url}/news/categories/${categoryId}`, { method: 'GET' })
       .then((res) => res.json())
       .catch((err) => {
@@ -63,6 +65,6 @@ export default class News {
 
     if (res.status === 404) res.data = []
 
-    return res.data as News_[]
+    return res.data as INews[]
   }
 }
