@@ -1,7 +1,7 @@
 import { MinecraftManifest } from './../../types/manifest.d'
 import { EMLLibError, ErrorType } from '../../types/errors'
 import { JAVA_RUNTIME_URL, MINECRAFT_MANIFEST_URL } from './consts'
-import { Loader } from '../../types/file'
+import { ILoader } from '../../types/file'
 
 class Manifests {
   /**
@@ -13,8 +13,8 @@ class Manifests {
    * @param url The URL of the EML AdminTool website, to get the loader info from the EML AdminTool.
    */
   async getLoaderInfo(minecraftVersion: string | null, url?: string) {
-    if (!minecraftVersion && !url) return { loader: 'vanilla', minecraft_version: 'latest_release', loader_version: 'latest_release' } as Loader
-    if (minecraftVersion) return { loader: 'vanilla', minecraft_version: minecraftVersion, loader_version: minecraftVersion } as Loader
+    if (!minecraftVersion && !url) return { type: 'VANILLA', minecraftVersion: 'latest_release', loaderVersion: 'latest_release' } as ILoader
+    if (minecraftVersion) return { type: 'VANILLA', minecraftVersion, loaderVersion: minecraftVersion } as ILoader
 
     const res = await fetch(`${url}/api/files-updater/loader`)
       .then((res) => res.json())
@@ -22,7 +22,7 @@ class Manifests {
         throw new EMLLibError(ErrorType.FETCH_ERROR, `Failed to fetch loader info: ${err.message}`)
       })
 
-    return res.data as Loader
+    return res as ILoader
   }
 
   /**
@@ -36,7 +36,7 @@ class Manifests {
    */
   async getMinecraftManifest(minecraftVersion: string | null = 'latest_release', url?: string) {
     if (!minecraftVersion && url) {
-      minecraftVersion = (await this.getLoaderInfo(null, url)).minecraft_version
+      minecraftVersion = (await this.getLoaderInfo(null, url)).minecraftVersion
     }
 
     const manifestUrl = await this.getMinecraftManifestUrl(minecraftVersion)

@@ -4,7 +4,7 @@
  */
 
 import { EMLLibError, ErrorType } from '../../types/errors'
-import { Background as Background_ } from '../../types/background'
+import { IBackground } from '../../types/background'
 
 /**
  * Manage the background of the Launcher.
@@ -22,16 +22,16 @@ export default class Background {
   }
 
   /**
-   * Get the current background for the Launcher.
+   * Get the current background from the EML AdminTool.
    * @returns The current Background object, or `null` if no background is set.
    */
-  async getBackground(): Promise<Background_ | null> {
-    const res = await fetch(`${this.url}/backgrounds`)
-      .then((res) => res.json() as Promise<{ data: Background_[] }>)
+  async getBackground(): Promise<IBackground | null> {
+    const res = await fetch(`${this.url}/background`)
+      .then((res) => res.json() as Promise<{ background: IBackground }>)
       .catch((err) => {
-        throw new EMLLibError(ErrorType.DOWNLOAD_ERROR, `Error while fetching backgrounds: ${err}`)
+        throw new EMLLibError(ErrorType.FETCH_ERROR, `Error while fetching backgrounds: ${err}`)
       })
 
-    return res.data.find((bg) => bg.status === 1) || null
+    return res.background ?? null
   }
 }

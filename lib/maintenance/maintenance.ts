@@ -4,7 +4,7 @@
  */
 
 import { EMLLibError, ErrorType } from '../../types/errors'
-import { Maintenance as Maintenance_ } from '../../types/maintenance'
+import { IMaintenance } from '../../types/maintenance'
 
 /**
  * Manage the Maintenance of the Launcher.
@@ -23,15 +23,16 @@ export default class Maintenance {
 
   /**
    * Get the current Maintenance status from the EML AdminTool.
-   * @returns The Maintenance status.
+   * @returns `null` if there is no maintenance, otherwise it will return the maintenance status.
    */
-  async getMaintenance(): Promise<Maintenance_> {
+  async getMaintenance(): Promise<IMaintenance | null> {
     let res = await fetch(`${this.url}/maintenance`, { method: 'GET' })
       .then((res) => res.json())
       .catch((err) => {
         throw new EMLLibError(ErrorType.FETCH_ERROR, `Error while fetching Maintenance from the EML AdminTool: ${err}`)
       })
 
-    return res.data
+    if (res.data.startTime) return res
+    else return null
   }
 }

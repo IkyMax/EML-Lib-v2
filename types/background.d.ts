@@ -1,6 +1,10 @@
 import { File } from './file'
 
-export interface Background extends File {
-  title?: string
-  status: number | boolean
+export interface IBackground {
+  success: true
+  name: string
+  status: 'ACTIVE'
+  createdAt: Date
+  updatedAt: Date
+  file: File
 }

@@ -4,7 +4,7 @@
 
 [<img src="https://img.shields.io/badge/Discord-EML-5561e6?&style=for-the-badge">](https://discord.gg/YVB4k6HzAY)
 [<img src="https://img.shields.io/badge/platforms-Windows%2C%20macOS%2C%20Linux-0077DA?style=for-the-badge&color=0077DA">](#platforms)
-[<img src="https://img.shields.io/badge/version-2.0.0--beta.1-orangered?style=for-the-badge&color=orangered">](package.json)
+[<img src="https://img.shields.io/badge/version-2.0.0--beta.2-orangered?style=for-the-badge&color=orangered">](package.json)
 
 ---
 
@@ -28,7 +28,7 @@
 
 To get all the capacities of this Node.js library, you must set up your [EML AdminTool](https://github.com/Electron-Minecraft-Launcher/EML-AdminTool-v2) website! Without it, you can only use Minecraft Vanilla, and many features will be disabled (such as News, Bootstrap, etc.).
 
-If you don't want to use the EML AdminTool, you should rather use the [Minecraft Launcher Core](https://npmjs.com/package/minecraft-launcher-core) library.
+If you don't want to use EML AdminTool, you should rather use the [Minecraft Launcher Core](https://npmjs.com/package/minecraft-launcher-core) library.
 
 ### EML Lib installation
 
@@ -45,7 +45,7 @@ npm i eml-lib
 
 Quick start using the [EML AdminTool](https://github.com/Electron-Minecraft-Launcher/EML-AdminTool-v2):
 
-```javascript
+```js
 const EMLLib = require('eml-lib')
 
 const launcher = new EMLLib.Launcher({
@@ -57,7 +57,7 @@ const launcher = new EMLLib.Launcher({
 launcher.launch()
 ```
 
-Please refer to the [documentation](https://github.com/Electron-Minecraft-Launcher/EML-Lib-v2/wiki) for more information.
+Please refer to the [wiki](https://github.com/Electron-Minecraft-Launcher/EML-Lib-v2/wiki) for more information.
 
 ## Platform compatibility
 
@@ -197,5 +197,4 @@ Please indicate the following information in your issue:
 
 <br>
 
-[^1]: Requires the [EML AdminTool](https://github.com/Electron-Minecraft-Launcher/EML-AdminTool-v2).
-
+[^1]: Requires [EML AdminTool](https://github.com/Electron-Minecraft-Launcher/EML-AdminTool-v2).

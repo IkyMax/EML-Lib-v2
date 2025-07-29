@@ -1,8 +1,8 @@
 import { File } from "./file"
 
-export interface Bootstraps {
-  win: File | null
-  mac: File | null
-  lin: File | null
+export interface IBootstraps {
+  winFile: File | null
+  macFile: File | null
+  linFile: File | null
   version: string
 }

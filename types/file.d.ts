@@ -39,13 +39,14 @@ export interface File {
   type: 'JAVA' | 'ASSET' | 'LIBRARY' | 'NATIVE' | 'MOD' | 'CONFIG' | 'BOOTSTRAP' | 'BACKGROUND' | 'FOLDER' | 'IMAGE' | 'OTHER'
 }
 
-export interface Loader {
+export interface ILoader {
   id?: number
-  loader: 'vanilla' | 'forge'
-  minecraft_version: string
-  loader_version: string | null
-  loader_type?: 'installer' | 'universal' | 'client'
-  file?: File
+  type: 'VANILLA' | 'FORGE'
+  minecraftVersion: string
+  loaderVersion: string | null
+  format: 'INSTALLER' | 'UNIVERSAL' | 'CLIENT'
+  file: File
+  updatedAt: Date
 }
 
 export interface ExtraFile extends File {

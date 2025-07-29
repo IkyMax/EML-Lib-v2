@@ -7,13 +7,13 @@ import { FullConfig } from '../../types/config'
 import { MinecraftManifest } from '../../types/manifest'
 import utils from '../utils/utils'
 import path_ from 'path'
-import { ExtraFile, File, Loader } from '../../types/file'
+import { ExtraFile, File, ILoader } from '../../types/file'
 
 export default class ArgumentsManager {
   private config: FullConfig
   private manifest: MinecraftManifest
   private loaderManifest: MinecraftManifest | null
-  private loader: Loader | null
+  private loader: ILoader | null
 
   constructor(config: FullConfig, manifest: MinecraftManifest) {
     this.config = config
@@ -27,7 +27,7 @@ export default class ArgumentsManager {
    * @param libraries The libraries of the game (including loader libraries).
    * @returns The arguments to launch the game.
    */
-  getArgs(libraries: ExtraFile[], loader: Loader | null, loaderManifest: MinecraftManifest | null = null) {
+  getArgs(libraries: ExtraFile[], loader: ILoader | null, loaderManifest: MinecraftManifest | null = null) {
     this.loaderManifest = loaderManifest
     this.loader = loader
 

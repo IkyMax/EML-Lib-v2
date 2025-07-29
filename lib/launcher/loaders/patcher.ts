@@ -5,7 +5,7 @@
 
 import AdmZip from 'adm-zip'
 import { FullConfig } from '../../../types/config'
-import { Loader } from '../../../types/file'
+import { ILoader } from '../../../types/file'
 import { MinecraftManifest } from '../../../types/manifest'
 import utils from '../../utils/utils'
 import fs from 'fs'
@@ -18,10 +18,10 @@ import { PatcherEvents } from '../../../types/events'
 export default class Patcher extends EventEmitter<PatcherEvents> {
   private config: FullConfig
   private manifest: MinecraftManifest
-  private loader: Loader
+  private loader: ILoader
   private installProfile: any
 
-  constructor(config: FullConfig, manifest: MinecraftManifest, loader: Loader, installProfile: any) {
+  constructor(config: FullConfig, manifest: MinecraftManifest, loader: ILoader, installProfile: any) {
     super()
     this.config = config
     this.manifest = manifest
@@ -116,7 +116,7 @@ export default class Patcher extends EventEmitter<PatcherEvents> {
     const argType = arg.replace('{', '').replace('}', '')
 
     const universalMaven = this.installProfile.libraries.find((v: any) => {
-      if (this.loader.loader === 'forge') return v.name.startsWith('net.minecraftforge:forge')
+      if (this.loader.type === 'FORGE') return v.name.startsWith('net.minecraftforge:forge')
     })
 
     if (this.installProfile.data[argType]) {
