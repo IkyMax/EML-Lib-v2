@@ -55,6 +55,7 @@ jobs:
           cp LICENSE dist/
           cp README.md dist/
           cp package.json dist/
+          cp -r types dist/
 
       - name: Publish to npm
         working-directory: dist

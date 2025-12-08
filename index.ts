@@ -15,11 +15,17 @@ import Java from './lib/java/java'
 import Launcher from './lib/launcher/launcher'
 
 export { MicrosoftAuth, AzAuth, CrackAuth, Bootstraps, Maintenance, News, Background, ServerStatus, Java, Launcher }
-
 export default { MicrosoftAuth, AzAuth, CrackAuth, Bootstraps, Maintenance, News, Background, ServerStatus, Java, Launcher }
 
-declare global {
-  namespace EMLLib {
-    export { MicrosoftAuth, AzAuth, CrackAuth, Bootstraps, Maintenance, News, Background, ServerStatus, Java, Launcher }
-  }
-}
+export * from './types/account'
+export * from './types/background'
+export * from './types/bootstraps'
+export * from './types/config'
+export * from './types/errors'
+export * from './types/events'
+export * from './types/file'
+export * from './types/maintenance'
+export * from './types/manifest'
+export * from './types/news'
+export * from './types/status'
+
