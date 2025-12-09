@@ -14,9 +14,6 @@ import ServerStatus from './lib/serverstatus/serverstatus'
 import Java from './lib/java/java'
 import Launcher from './lib/launcher/launcher'
 
-export { MicrosoftAuth, AzAuth, CrackAuth, Bootstraps, Maintenance, News, Background, ServerStatus, Java, Launcher }
-export default { MicrosoftAuth, AzAuth, CrackAuth, Bootstraps, Maintenance, News, Background, ServerStatus, Java, Launcher }
-
 export * from './types/account'
 export * from './types/background'
 export * from './types/bootstraps'
@@ -29,3 +26,168 @@ export * from './types/manifest'
 export * from './types/news'
 export * from './types/status'
 
+/**
+ * Authenticate a user with Microsoft.
+ *
+ * **Attention!** Using this class requires Electron. Use `npm i electron` to install it.
+ */
+export { MicrosoftAuth }
+
+/**
+ * Authenticate a user with [Azuriom](https://azuriom.com/).
+ */
+export { AzAuth }
+
+/**
+ * Authenticate a user with a crack account.
+ * @deprecated This auth method is not secure, use it only for testing purposes or for local servers!
+ */
+export { CrackAuth }
+
+/**
+ * Update your Launcher.
+ *
+ * **Attention!** This class only works with the EML AdminTool. Please do not use it without the AdminTool.
+ * @workInProgress
+ */
+export { Bootstraps }
+
+/**
+ * Manage the Maintenance of the Launcher.
+ *
+ * **Attention!** This class only works with the EML AdminTool. Please do not use it without the AdminTool.
+ */
+export { Maintenance }
+
+/**
+ * Manage the News of the Launcher.
+ *
+ * **Attention!** This class only works with the EML AdminTool. Please do not use it without the AdminTool.
+ */
+export { News }
+
+/**
+ * Manage the background of the Launcher.
+ *
+ * **Attention!** This class only works with the EML AdminTool. Please do not use it without the AdminTool.
+ */
+export { Background }
+
+/**
+ * Get the status of a Minecraft server.
+ */
+export { ServerStatus }
+
+/**
+ * Download Java for Minecraft.
+ *
+ * You should not use this class if you launch Minecraft with `java.install: 'auto'` in
+ * the configuration.
+ */
+export { Java }
+
+/**
+ * Launch Minecraft.
+ * @workInProgress
+ */
+export { Launcher }
+
+/**
+ * ## Electron Minecraft Launcher Lib
+ * ### Create your Electron Minecraft Launcher easily.
+ *
+ * ---
+ *
+ * **Requirements:**
+ * - Node.js 15.14.0 or higher: see [Node.js](https://nodejs.org/);
+ * - Electron 15.0.0 or higher: please install it with `npm i electron` _if you use
+ * Microsoft Authentication_.
+ *
+ * **Recommandations:**
+ * - To get all the capacities of this Node.js library, you must set up your
+ * [EML AdminTool](https://github.com/Electron-Minecraft-Launcher/EML-AdminTool-v2) website!
+ * - If you don't want to use the EML AdminTool, you should rather use the
+ * [Minecraft Launcher Core](https://npmjs.com/package/minecraft-launcher-core) library.
+ *
+ * ---
+ *
+ * [Wiki](https://github.com/Electron-Minecraft-Launcher/EML-Lib/wiki) —
+ * [GitHub](https://github.com/Electron-Minecraft-Launcher/EML-Lib-v2) —
+ * [NPM](https://www.npmjs.com/package/eml-lib) —
+ * [EML Website](https://electron-minecraft-launcher.ml)
+ *
+ * ---
+ *
+ * @version 2.0.0-7
+ * @license MIT — See the `LICENSE` file for more information
+ * @copyright Copyright (c) 2025, GoldFrite
+ */
+const EMLLib = {
+  /**
+   * Authenticate a user with Microsoft.
+   *
+   * **Attention!** Using this class requires Electron. Use `npm i electron` to install it.
+   */
+  MicrosoftAuth,
+
+  /**
+   * Authenticate a user with [Azuriom](https://azuriom.com/).
+   */
+  AzAuth,
+
+  /**
+   * Authenticate a user with a crack account.
+   * @deprecated This auth method is not secure, use it only for testing purposes or for local servers!
+   */
+  CrackAuth,
+
+  /**
+   * Update your Launcher.
+   *
+   * **Attention!** This class only works with the EML AdminTool. Please do not use it without the AdminTool.
+   * @workInProgress
+   */
+  Bootstraps,
+
+  /**
+   * Manage the Maintenance of the Launcher.
+   *
+   * **Attention!** This class only works with the EML AdminTool. Please do not use it without the AdminTool.
+   */
+  Maintenance,
+
+  /**
+   * Manage the News of the Launcher.
+   *
+   * **Attention!** This class only works with the EML AdminTool. Please do not use it without the AdminTool.
+   */
+  News,
+
+  /**
+   * Manage the background of the Launcher.
+   *
+   * **Attention!** This class only works with the EML AdminTool. Please do not use it without the AdminTool.
+   */
+  Background,
+
+  /**
+   * Get the status of a Minecraft server.
+   */
+  ServerStatus,
+
+  /**
+   * Download Java for Minecraft.
+   *
+   * You should not use this class if you launch Minecraft with `java.install: 'auto'` in
+   * the configuration.
+   */
+  Java,
+
+  /**
+   * Launch Minecraft.
+   * @workInProgress
+   */
+  Launcher
+}
+
+export default EMLLib
