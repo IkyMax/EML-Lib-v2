@@ -14,17 +14,17 @@ import ServerStatus from './lib/serverstatus/serverstatus'
 import Java from './lib/java/java'
 import Launcher from './lib/launcher/launcher'
 
-export * from './types/account'
-export * from './types/background'
-export * from './types/bootstraps'
-export * from './types/config'
-export * from './types/errors'
-export * from './types/events'
-export * from './types/file'
-export * from './types/maintenance'
-export * from './types/manifest'
-export * from './types/news'
-export * from './types/status'
+export type * from './types/account'
+export type * from './types/background'
+export type * from './types/bootstraps'
+export type * from './types/config'
+export type * from './types/errors'
+export type * from './types/events'
+export type * from './types/file'
+export type * from './types/maintenance'
+export type * from './types/manifest'
+export type * from './types/news'
+export type * from './types/status'
 
 /**
  * Authenticate a user with Microsoft.
@@ -118,7 +118,7 @@ export { Launcher }
  *
  * ---
  *
- * @version 2.0.0-beta.9
+ * @version 2.0.0-beta.10
  * @license MIT — See the `LICENSE` file for more information
  * @copyright Copyright (c) 2025, GoldFrite
  */
