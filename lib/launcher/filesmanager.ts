@@ -211,7 +211,7 @@ export default class FilesManager extends EventEmitter<FilesManagerEvents> {
    */
   async extractNatives(libraries: File[]) {
     const natives = libraries.filter((lib) => lib.type === 'NATIVE')
-    const nativesFolder = path_.join(this.config.root, 'bin', 'natives')
+    const nativesFolder = path_.resolve(this.config.root, 'bin', 'natives')
     let files: File[] = []
 
     if (!existsSync(nativesFolder)) {
@@ -224,10 +224,21 @@ export default class FilesManager extends EventEmitter<FilesManagerEvents> {
       const zip = new AdmZip(path_.join(this.config.root, native.path, native.name))
       const promisesInner = zip.getEntries().map(async (entry) => {
         if (!entry.entryName.startsWith('META-INF')) {
-          const entryPath = path_.join(nativesFolder, entry.entryName)
+          const entryPath = path_.resolve(nativesFolder, entry.entryName)
+          const relative = path_.relative(nativesFolder, entryPath)
+          const isSafe = relative && !relative.startsWith('..') && !path_.isAbsolute(relative)
+
+          if (!isSafe) {
+            console.warn(`[Security] Skipped unsafe native extraction: ${entry.entryName}`)
+            return
+          }
+
           if (entry.isDirectory && !existsSync(entryPath)) {
             await fs.mkdir(entryPath, { recursive: true })
           } else {
+            const parentDir = path_.dirname(entryPath)
+            if (!existsSync(parentDir)) await fs.mkdir(parentDir, { recursive: true })
+
             const data = zip.readFile(entry)
             if (data) await fs.writeFile(entryPath, data)
           }
