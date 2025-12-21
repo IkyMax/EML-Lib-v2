@@ -51,7 +51,6 @@ export interface DownloaderEvents {
       /**
        * @workInProgress Currently not working well.
        */
-      eta: number
       type: string
     }
   ]

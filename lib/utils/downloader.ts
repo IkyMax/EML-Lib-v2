@@ -12,18 +12,23 @@ import EventEmitter from '../utils/events'
 import { DownloaderEvents } from '../../types/events'
 import utils from './utils'
 import { EMLLibError, ErrorType } from '../../types/errors'
-import { chmod } from 'node:fs/promises'
+import http from 'node:http'
+import https from 'node:https'
 
 export default class Downloader extends EventEmitter<DownloaderEvents> {
   private readonly CONCURRENCY_LIMIT = 5
   private readonly dest: string
+
+  private httpAgent = new http.Agent({ keepAlive: true, maxSockets: 32 })
+  private httpsAgent = new https.Agent({ keepAlive: true, maxSockets: 32 })
+
   private size = 0
   private amount = 0
   private downloaded: { amount: number; size: number } = { amount: 0, size: 0 }
-  private error = false
+
   private speed = 0
-  private eta = 0
-  private history: { size: number; time: number }[] = []
+  private lastTime = 0
+  private lastSize = 0
 
   /**
    * @param dest Destination folder.
@@ -45,10 +50,9 @@ export default class Downloader extends EventEmitter<DownloaderEvents> {
     this.size = filesToDownload.reduce((acc, curr) => acc + (curr.size ?? 0), 0)
     this.amount = filesToDownload.length
     this.downloaded = { amount: 0, size: 0 }
-    this.error = false
     this.speed = 0
-    this.eta = 0
-    this.history = []
+    this.lastTime = Date.now()
+    this.lastSize = 0
 
     if (this.size === 0 || filesToDownload.length === 0) {
       this.emit('download_end', { downloaded: this.downloaded })
@@ -96,7 +100,7 @@ export default class Downloader extends EventEmitter<DownloaderEvents> {
 
       try {
         await fs.access(filePath)
-        if (file.sha1 && file.sha1 !== await utils.getFileHash(filePath)) {
+        if (file.sha1 && file.sha1 !== (await utils.getFileHash(filePath))) {
           needsDownload = true
         }
       } catch {
@@ -139,7 +143,12 @@ export default class Downloader extends EventEmitter<DownloaderEvents> {
 
     await fs.mkdir(dirPath, { recursive: true })
 
-    const res = await fetch(file.url, { headers: { Accept: 'application/octet-stream' } })
+    const agent = file.url.startsWith('https') ? this.httpsAgent : this.httpAgent
+
+    const res = await fetch(file.url, {
+      agent: agent,
+      headers: { Accept: 'application/octet-stream' }
+    })
 
     if (!res.ok || !res.body) {
       throw new EMLLibError(ErrorType.FETCH_ERROR, `Error while fetching ${file.name}: ${res.statusText}`)
@@ -154,27 +163,26 @@ export default class Downloader extends EventEmitter<DownloaderEvents> {
         stream.destroy()
       }
       res.body!.on('data', (chunk: Buffer) => {
-        const now = Date.now()
-        this.history.push({ size: chunk.length, time: now })
-        while (this.history.length > 0 && now - this.history[0].time > 6000) {
-          this.history.shift()
-        }
-
         stream.write(chunk)
 
         bytesDownloadedThisAttempt += chunk.length
         this.downloaded.size += chunk.length
 
-        const totalSampled = this.history.reduce((acc, curr) => acc + curr.size, 0)
-        const elapsed = (now - this.history[0].time) / 1000
-        this.speed = elapsed > 0 ? totalSampled / elapsed : 0
-        this.eta = this.speed > 0 ? (this.size - this.downloaded.size) / this.speed : 0
+        const now = Date.now()
+        const diffTime = now - this.lastTime
+
+        if (diffTime > 500) {
+          const diffSize = this.downloaded.size - this.lastSize
+          this.speed = diffSize / (diffTime / 1000)
+
+          this.lastTime = now
+          this.lastSize = this.downloaded.size
+        }
 
         this.emit('download_progress', {
           total: { amount: this.amount, size: this.size },
           downloaded: this.downloaded,
-          speed: this.speed,
-          eta: Math.floor(this.eta),
+          speed: Math.floor(this.speed),
           type: file.type
         })
       })
@@ -185,6 +193,7 @@ export default class Downloader extends EventEmitter<DownloaderEvents> {
 
       res.body!.on('error', (err) => {
         this.downloaded.size -= bytesDownloadedThisAttempt
+        this.lastSize = Math.min(this.lastSize, this.downloaded.size)
         cleanup()
         reject(err)
       })
