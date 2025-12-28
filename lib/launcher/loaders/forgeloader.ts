@@ -5,7 +5,7 @@
 
 import { FullConfig } from '../../../types/config'
 import { ExtraFile, File, ILoader } from '../../../types/file'
-import { Artifact, MinecraftManifest } from '../../../types/manifest'
+import { MinecraftManifest } from '../../../types/manifest'
 import AdmZip from 'adm-zip'
 import fs from 'node:fs/promises'
 import { existsSync } from 'node:fs'

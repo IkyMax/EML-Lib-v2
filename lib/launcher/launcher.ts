@@ -147,7 +147,7 @@ export default class Launcher extends EventEmitter<
     //* Check Java
     this.emit('launch_check_java')
 
-    const javaInfo = await java.check(this.config.java.absolutePath, manifest.javaVersion?.majorVersion ?? 8)
+    await java.check(this.config.java.absolutePath, manifest.javaVersion?.majorVersion ?? 8)
 
     //* Path loader
     this.emit('launch_patch_loader')
