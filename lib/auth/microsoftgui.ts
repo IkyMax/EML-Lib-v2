@@ -1,6 +1,6 @@
 /**
  * @license MIT
- * @copyright Copyright (c) 2025, GoldFrite
+ * @copyright Copyright (c) 2026, GoldFrite
  */
 
 import type { BrowserWindow } from 'electron'
@@ -44,7 +44,7 @@ export default class MicrosoftAuthGui {
       electron.app.whenReady().then(() => {
         electron.session.defaultSession.cookies.get({ domain: 'live.com' }).then((cookies) => {
           for (let cookie of cookies) {
-            let cookieUrl = `http${cookie.secure ? 's' : ''}://${cookie.domain!.replace(/$\./, '') + cookie.path}`
+            let cookieUrl = `http${cookie.secure ? 's' : ''}://${cookie.domain!.replace(/^\./, '') + cookie.path}`
             electron.session.defaultSession.cookies.remove(cookieUrl, cookie.name)
           }
         })

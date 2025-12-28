@@ -1,6 +1,6 @@
 /**
  * @license MIT
- * @copyright Copyright (c) 2025, GoldFrite
+ * @copyright Copyright (c) 2026, GoldFrite
  */
 
 import MicrosoftAuth from './lib/auth/microsoft'
@@ -118,9 +118,9 @@ export { Launcher }
  *
  * ---
  *
- * @version 2.0.0-beta.17
+ * @version 2.0.0-beta.18
  * @license MIT — See the `LICENSE` file for more information
- * @copyright Copyright (c) 2025, GoldFrite
+ * @copyright Copyright (c) 2026, GoldFrite
  */
 const EMLLib = {
   /**

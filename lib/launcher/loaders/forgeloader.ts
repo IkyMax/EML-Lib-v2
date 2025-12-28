@@ -1,11 +1,11 @@
 /**
  * @license MIT
- * @copyright Copyright (c) 2025, GoldFrite
+ * @copyright Copyright (c) 2026, GoldFrite
  */
 
 import { FullConfig } from '../../../types/config'
 import { ExtraFile, File, ILoader } from '../../../types/file'
-import { Artifact, MinecraftManifest } from '../../../types/manifest'
+import { MinecraftManifest } from '../../../types/manifest'
 import AdmZip from 'adm-zip'
 import fs from 'node:fs/promises'
 import { existsSync } from 'node:fs'
