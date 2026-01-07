@@ -42,25 +42,9 @@ export interface JavaEvents {
   java_info: [{ version: string; arch: '32-bit' | '64-bit' }]
 }
 
-export interface DownloaderEvents {
-  download_progress: [
-    {
-      total: { amount: number; size: number }
-      downloaded: { amount: number; size: number }
-      speed: number
-      /**
-       * @workInProgress Currently not working well.
-       */
-      eta: number
-      type: string
-    }
-  ]
-  download_error: [{ filename: string; type: string; message: Error | string }]
-  download_end: [{ downloaded: { amount: number; size: number } }]
-}
-
 export interface CleanerEvents {
   clean_progress: [{ filename: string }]
+  clean_error: [{ filename: string; message: Error | string }]
   clean_end: [{ amount: number }]
 }
 
@@ -71,4 +55,23 @@ export interface PatcherEvents {
   patch_debug: [string]
 }
 
+export interface BootstrapsEvents {
+  bootstraps_error: [{ message: string | Error }]
+}
+
+export interface DownloaderEvents {
+  download_progress: [
+    {
+      total: { amount: number; size: number }
+      downloaded: { amount: number; size: number }
+      speed: number
+      /**
+       * @workInProgress Currently not working well.
+       */
+      type: string
+    }
+  ]
+  download_error: [{ filename: string; type: string; message: Error | string }]
+  download_end: [{ downloaded: { amount: number; size: number } }]
+}
 

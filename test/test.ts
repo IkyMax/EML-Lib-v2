@@ -1,13 +1,38 @@
 import EMLLib from '../index'
-
+import { app, BrowserWindow } from 'electron'
 
 async function main() {
+  app.whenReady().then(async () => {
+    const mainWindow = new BrowserWindow({
+      width: 800,
+      height: 600,
+      webPreferences: {
+        nodeIntegration: true,
+        contextIsolation: false
+      }
+    })
+
+    mainWindow.loadURL('data:text/html,<h1>EMLLib Test</h1><p>Check the console for output.</p>')
+
+    const msAuth = new EMLLib.MicrosoftAuth(mainWindow)
+    try {
+      const account = await msAuth.auth()
+      console.log('Authenticated account:', account)
+    } catch (err) {
+      console.error('Authentication error:', err)
+    }
+
+    app.quit()
+  })
+}
+
+async function _main() {
   const launcher = new EMLLib.Launcher({
     url: 'http://localhost:8080',
     serverId: 'goldfrite',
     account: new EMLLib.CrackAuth().auth('GoldFrite'),
     cleaning: {
-      clean: false
+      clean: true
     }
   })
 
@@ -50,11 +75,11 @@ async function main() {
     launcher.on('launch_debug', (message) => console.log(`Debug: ${message}\n`))
     launcher.on('patch_debug', (message) => console.log(`Debug: ${message}`))
 
-    const t = await launcher.launch()
+    await launcher.launch()
   } catch (error) {
     console.error('err', error)
   }
 }
 
-main()
+_main()
 

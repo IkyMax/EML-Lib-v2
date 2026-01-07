@@ -1,6 +1,6 @@
 /**
  * @license MIT
- * @copyright Copyright (c) 2025, GoldFrite
+ * @copyright Copyright (c) 2026, GoldFrite
  */
 
 import AdmZip from 'adm-zip'
@@ -8,7 +8,8 @@ import { FullConfig } from '../../../types/config'
 import { ILoader, File } from '../../../types/file'
 import { MinecraftManifest } from '../../../types/manifest'
 import utils from '../../utils/utils'
-import fs from 'node:fs'
+import fs from 'node:fs/promises'
+import { existsSync } from 'node:fs'
 import path_ from 'node:path'
 import { spawn } from 'node:child_process'
 import EventEmitter from '../../utils/events'
@@ -29,7 +30,7 @@ export default class Patcher extends EventEmitter<PatcherEvents> {
   }
 
   async patch() {
-    const files = this.isPatched()
+    const files = await this.isPatched()
     let i = 0
 
     if (!this.installProfile.processors || this.installProfile.processors.length === 0 || files.patched) {
@@ -43,13 +44,13 @@ export default class Patcher extends EventEmitter<PatcherEvents> {
       if (processor?.sides && !processor.sides.includes('client')) continue
 
       const jarExtractPathName = path_.join(this.config.root, 'libraries', utils.getLibraryPath(processor.jar), utils.getLibraryName(processor.jar))
-      const args = (processor.args as string[]).map((arg) => this.mapArg(arg)).map((arg) => this.mapPath(arg))
+      const args = (processor.args as string[]).map((arg) => this.mapPath(this.mapArg(arg)))
       const classpath = (processor.classpath as string[]).map(
         (cp) => `"${path_.join(this.config.root, 'libraries', utils.getLibraryPath(cp), utils.getLibraryName(cp))}"`
       )
       const mainClass = this.getJarMain(jarExtractPathName)!
 
-      await new Promise((resolve, reject) => {
+      await new Promise((resolve) => {
         const patch = spawn(
           `"${this.config.java.absolutePath.replace('${X}', this.manifest.javaVersion?.majorVersion + '' || '8')}"`,
           ['-classpath', [`"${jarExtractPathName}"`, ...classpath].join(path_.delimiter), mainClass, ...args],
@@ -71,11 +72,9 @@ export default class Patcher extends EventEmitter<PatcherEvents> {
     return files.files
   }
 
-  private isPatched() {
+  private async isPatched() {
     const processors = this.installProfile.processors
 
-    let patched = true
-    let files: File[] = []
     let libraries: string[] = []
 
     processors?.forEach((processor: any) => {
@@ -92,20 +91,29 @@ export default class Patcher extends EventEmitter<PatcherEvents> {
 
     libraries = [...new Set(libraries)]
 
-    for (let lib of libraries) {
+    const promises = libraries.map(async (lib) => {
       const libName = utils.getLibraryName(lib.replace('[', '').replace(']', ''))
       const libPath = utils.getLibraryPath(lib.replace('[', '').replace(']', ''))
       const libExtractPath = path_.join(this.config.root, 'libraries', libPath)
 
-      files.push({ name: libName, path: path_.join('libraries', libPath), url: '', type: 'LIBRARY' })
-      if (!fs.existsSync(path_.join(libExtractPath, libName))) patched = false
-    }
+      const fileObj = { name: libName, path: path_.join('libraries', libPath), url: '', type: 'LIBRARY' }
+      try {
+        await fs.access(path_.join(libExtractPath, libName))
+        return { patched: true, file: fileObj }
+      } catch {
+        return { patched: false, file: fileObj }
+      }
+    })
+
+    const result = await Promise.all(promises)
+    const patched = result.every((c) => c.patched)
+    const files = result.map((c) => c.file as File)
 
     return { patched, files }
   }
 
   private getJarMain(jarPath: string) {
-    if (!fs.existsSync(jarPath)) return null
+    if (!existsSync(jarPath)) return null
     const manifest = new AdmZip(jarPath).getEntry('META-INF/MANIFEST.MF')?.getData()
     if (!manifest) return null
     return manifest.toString('utf8').split('Main-Class: ')[1].split('\r\n')[0]
