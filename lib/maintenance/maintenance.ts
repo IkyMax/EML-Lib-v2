@@ -5,6 +5,8 @@
 
 import { EMLLibError, ErrorType } from '../../types/errors'
 import { IMaintenance } from '../../types/maintenance'
+import { InstanceManager } from '../utils/instance'
+import { Instance } from '../../types/instance'
 
 /**
  * Manage the Maintenance of the Launcher.
@@ -13,12 +15,19 @@ import { IMaintenance } from '../../types/maintenance'
  */
 export default class Maintenance {
   private readonly url: string
+  private readonly instanceManager: InstanceManager | null = null
 
   /**
-   * @param url The URL of your EML AdminTool website.
+   * @param url The URL of your EML AdminTool website, or an Instance object for named instances.
+   * @param serverId Optional server ID for token storage (required for Instance objects).
    */
-  constructor(url: string) {
-    this.url = `${url}/api`
+  constructor(url: string | Instance, serverId?: string) {
+    if (typeof url === 'string') {
+      this.url = `${url}/api`
+    } else {
+      this.url = '' // Will use InstanceManager
+      this.instanceManager = new InstanceManager(url, serverId || 'default')
+    }
   }
 
   /**
@@ -26,11 +35,18 @@ export default class Maintenance {
    * @returns `null` if there is no maintenance, otherwise it will return the maintenance status.
    */
   async getMaintenance() {
-    let res = await fetch(`${this.url}/maintenance`, { method: 'GET' })
-      .then((res) => res.json())
-      .catch((err) => {
-        throw new EMLLibError(ErrorType.FETCH_ERROR, `Error while fetching Maintenance from the EML AdminTool: ${err}`)
-      })
+    let res: any
+    
+    if (this.instanceManager) {
+      await this.instanceManager.ensureAuthenticated()
+      res = await this.instanceManager.fetch<any>('/api/maintenance')
+    } else {
+      res = await fetch(`${this.url}/maintenance`, { method: 'GET' })
+        .then((res) => res.json())
+        .catch((err) => {
+          throw new EMLLibError(ErrorType.FETCH_ERROR, `Error while fetching Maintenance from the EML AdminTool: ${err}`)
+        })
+    }
 
     if (res.startTime) return res as IMaintenance
     else return null

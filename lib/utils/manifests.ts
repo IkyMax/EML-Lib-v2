@@ -7,6 +7,7 @@ import { MinecraftManifest } from './../../types/manifest.d'
 import { EMLLibError, ErrorType } from '../../types/errors'
 import { JAVA_RUNTIME_URL, MINECRAFT_MANIFEST_URL } from './consts'
 import { ILoader } from '../../types/file'
+import { InstanceManager } from './instance'
 
 class Manifests {
   /**
@@ -16,16 +17,23 @@ class Manifests {
    * release version of Minecraft. Set to `latest_snapshot` to get the latest snapshot version of
    * Minecraft.
    * @param url The URL of the EML AdminTool website, to get the loader info from the EML AdminTool.
+   * @param instanceManager Optional InstanceManager for authenticated requests to named instances.
    */
-  async getLoaderInfo(minecraftVersion: string | null, url?: string) {
+  async getLoaderInfo(minecraftVersion: string | null, url?: string, instanceManager?: InstanceManager) {
     if (!minecraftVersion && !url) return { type: 'VANILLA', minecraftVersion: 'latest_release', loaderVersion: 'latest_release' } as ILoader
     if (minecraftVersion) return { type: 'VANILLA', minecraftVersion, loaderVersion: minecraftVersion } as ILoader
 
-    const res = await fetch(`${url}/api/loader`)
-      .then((res) => res.json())
-      .catch((err) => {
-        throw new EMLLibError(ErrorType.FETCH_ERROR, `Failed to fetch loader info: ${err.message}`)
-      })
+    // Use InstanceManager for authenticated fetch if available, otherwise direct fetch
+    let res: ILoader
+    if (instanceManager) {
+      res = await instanceManager.fetch<ILoader>('/api/loader')
+    } else {
+      res = await fetch(`${url}/api/loader`)
+        .then((r) => r.json())
+        .catch((err) => {
+          throw new EMLLibError(ErrorType.FETCH_ERROR, `Failed to fetch loader info: ${err.message}`)
+        })
+    }
 
     return res as ILoader
   }
@@ -37,11 +45,12 @@ class Manifests {
    * release version of Minecraft. Set to `latest_snapshot` to get the latest snapshot version of
    * Minecraft.
    * @param url The URL of the EML AdminTool website, to get the version from the EML AdminTool.
+   * @param instanceManager Optional InstanceManager for authenticated requests to named instances.
    * @returns The manifest of the Minecraft version.
    */
-  async getMinecraftManifest(minecraftVersion: string | null = 'latest_release', url?: string) {
+  async getMinecraftManifest(minecraftVersion: string | null = 'latest_release', url?: string, instanceManager?: InstanceManager) {
     if (!minecraftVersion && url) {
-      minecraftVersion = (await this.getLoaderInfo(null, url)).minecraftVersion
+      minecraftVersion = (await this.getLoaderInfo(null, url, instanceManager)).minecraftVersion
     }
 
     const manifestUrl = await this.getMinecraftManifestUrl(minecraftVersion)

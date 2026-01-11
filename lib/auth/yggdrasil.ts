@@ -4,29 +4,23 @@
  */
 
 import { Account } from '../../types/account'
+import { YggdrasilProfile } from '../../types/account'
 import { EMLLibError, ErrorType } from '../../types/errors'
 import { v4 } from 'uuid'
 
 /**
  * Authenticate a user with an yggdrasil-compatible server (Based on [Authlib-Injector](https://github-com.translate.goog/yushijinhun/authlib-injector/wiki/Yggdrasil-%E6%9C%8D%E5%8A%A1%E7%AB%AF%E6%8A%80%E6%9C%AF%E8%A7%84%E8%8C%83?_x_tr_sl=zh-CN&_x_tr_tl=en&_x_tr_hl=es&_x_tr_pto=wapp) and [original yggdrasil](https://minecraft.wiki/w/Yggdrasil) specs).
+ * this is a slightly modified version for Kintare compatibility.
  */
 export default class Yggdrasil {
-  private readonly url: string
+  /** Kintare Yggdrasil Server URL */
+  private static readonly BASE_URL = 'http://localhost:3005'
 
   /**
-   * @param url The Authlib-Injector Metadata URL of your Yggdrasil server.
+   * Creates a new Yggdrasil authentication instance.
    */
-  constructor(url: string) {
-    if (url.endsWith('/')) url = url.slice(0, -1)
-    this.url = `${url}/authserver`
-  }
+  constructor() {}
 
-  /**
-   * generates a clientToken for an specific user
-   */
-  async clientGen(): Promise<string> {
-  return v4();
-}
 
   /**
    * Authenticate a user with Yggdrasil.
@@ -36,8 +30,8 @@ export default class Yggdrasil {
    * @returns The account information.
    */
   
-  async authenticate(username: string, password: string): Promise<Account | { needsProfileSelection: true; availableProfiles: any[]; accessToken: string; clientToken: string }> {
-    const res = await fetch(`${this.url}/authenticate`, {
+  async authenticate(username: string, password: string): Promise<Account | { needsProfileSelection: true; availableProfiles: YggdrasilProfile[]; accessToken: string; clientToken: string }> {
+    const res = await fetch(`${Yggdrasil.BASE_URL}/authenticate`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -84,7 +78,7 @@ export default class Yggdrasil {
    * @returns The renewed account information.
    */
   async validate(user: Account): Promise<Account> {
-    const res = await fetch(`${this.url}/validate`, {
+    const res = await fetch(`${Yggdrasil.BASE_URL}/validate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -121,7 +115,7 @@ export default class Yggdrasil {
    */
   async refresh(
     user: Account | { accessToken: string; clientToken: string },
-    selectedProfile?: { id: string; name: string }
+    selectedProfile?: YggdrasilProfile
   ): Promise<Account> {
     const payload: any = {
       accessToken: user.accessToken,
@@ -133,7 +127,7 @@ export default class Yggdrasil {
       payload.selectedProfile = selectedProfile
     }
 
-    const res = await fetch(`${this.url}/refresh`, {
+    const res = await fetch(`${Yggdrasil.BASE_URL}/refresh`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -166,7 +160,7 @@ export default class Yggdrasil {
    * @param user The user account to logout.
    */
   async logout(user: Account) {
-    await fetch(`${this.url}/invalidate`, {
+    await fetch(`${Yggdrasil.BASE_URL}/invalidate`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'

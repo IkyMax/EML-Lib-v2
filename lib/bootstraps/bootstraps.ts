@@ -9,24 +9,34 @@ import { BootstrapsEvents, DownloaderEvents } from '../../types/events'
 import type { AppUpdater } from 'electron-updater'
 import { IBootstraps } from '../../types/bootstraps'
 import utils from '../utils/utils'
+import { InstanceManager } from '../utils/instance'
+import { Instance } from '../../types/instance'
 
 /**
  * Update your Launcher.
  *
  * **Attention!** This class only works with the EML AdminTool. Please do not use it without the AdminTool.
  *
- * **Attention!** Using this class requires Electron Updater. Use `npm i electron-updater` to install it.
+ * **Attention!** Using this class requires Electron Updater. Use `npm i electron-updater` to use the Bootstraps feature.
  */
 export default class Bootstraps extends EventEmitter<DownloaderEvents & BootstrapsEvents> {
   private readonly url: string
+  private readonly instanceManager: InstanceManager | null = null
   private autoUpdater: AppUpdater | undefined
 
   /**
-   * @param url The URL of your EML AdminTool website
+   * @param url The URL of your EML AdminTool website, or an Instance object for named instances.
+   * @param serverId Optional server ID for token storage (required for Instance objects).
    */
-  constructor(url: string) {
+  constructor(url: string | Instance, serverId?: string) {
     super()
-    this.url = `${url}/files/bootstraps/${utils.getOS()}`
+    if (typeof url === 'string') {
+      this.url = `${url}/files/bootstraps/${utils.getOS()}`
+    } else {
+      // For named instances, use the instance URL pattern
+      this.instanceManager = new InstanceManager(url, serverId || 'default')
+      this.url = `${this.instanceManager.buildUrl('/files/bootstraps/')}${utils.getOS()}`
+    }
   }
 
   /**

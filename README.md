@@ -2,6 +2,8 @@
 
 **Electron Minecraft Launcher Lib (EML Lib) is a Node.js library. It permits to authenticate, download Java and Minecraft and launch Minecraft.**
 
+**This is a fork made for Kintare Services, don't ask support on Official EML Channels!**
+
 [<img src="https://img.shields.io/badge/Discord-EML-5561e6?&style=for-the-badge">](https://discord.gg/YVB4k6HzAY)
 [<img src="https://img.shields.io/badge/platforms-Windows%2C%20macOS%2C%20Linux-0077DA?style=for-the-badge&color=0077DA">](#platforms)
 [<img src="https://img.shields.io/badge/version-2.0.0--beta.10-orangered?style=for-the-badge&color=orangered">](package.json)
@@ -10,14 +12,15 @@
 
 ## Features
 
-- **Authentication**: Authenticate users with Microsoft, Azuriom, Yggdrasil or Crack.
-- **Minecraft**: Automatically download and launch Minecraft (Vanilla and Forge [^1]; Fabric, NeoForge, Quilt and MCP are coming soon), and remove unwanted files (such as unwanted mods).
-- **Java**: Automatically download and install Java.
+- **Authentication**: Authenticate users with Microsoft, Azuriom, Kintare, Yggdrasil-Kintare or Crack.
+- **Minecraft**[^2]: Automatically download and launch Minecraft (Vanilla and Forge [^1]; Fabric, NeoForge, Quilt and MCP are coming soon), and remove unwanted files (such as unwanted mods).
+- **Java [^1]**: Automatically download and install Java 
 - **Bootstraps [^1]**: Auto-update your launcher.
 - **Maintenance [^1]**: Block the launcher during maintenance.
 - **Server status**: Displaying server information (from Minecraft 1.4 to the latest Minecraft version)
 - **News [^1]**: Displaying news.
 - **Background [^1]**: Displaying a background image.
+- **Instances [^2]**: Switch between Minecraft server configs.
 
 ## Installation
 
@@ -219,4 +222,5 @@ Please indicate the following information in your issue:
 <br>
 
 [^1]: Requires [EML AdminTool](https://github.com/Electron-Minecraft-Launcher/EML-AdminTool-v2).
+[^1]: Modified for a custom backend compatible with [EML AdminTool](https://github.com/Electron-Minecraft-Launcher/EML-AdminTool-v2) spec, see docs to see how to implement these changes on EML AdminTool and launchers.
 

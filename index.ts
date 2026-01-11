@@ -7,6 +7,7 @@ import MicrosoftAuth from './lib/auth/microsoft'
 import AzAuth from './lib/auth/azuriom'
 import CrackAuth from './lib/auth/crack'
 import YggdrasilAuth from './lib/auth/yggdrasil'
+import KintareAuth from './lib/auth/kintare'
 import Bootstraps from './lib/bootstraps/bootstraps'
 import Maintenance from './lib/maintenance/maintenance'
 import News from './lib/news/news'
@@ -14,6 +15,7 @@ import Background from './lib/background/background'
 import ServerStatus from './lib/serverstatus/serverstatus'
 import Java from './lib/java/java'
 import Launcher from './lib/launcher/launcher'
+import { InstanceManager } from './lib/utils/instance'
 
 export type * from './types/account'
 export type * from './types/background'
@@ -22,6 +24,8 @@ export type * from './types/config'
 export type * from './types/errors'
 export type * from './types/events'
 export type * from './types/file'
+export type * from './types/instance'
+export type * from './types/java'
 export type * from './types/maintenance'
 export type * from './types/manifest'
 export type * from './types/news'
@@ -47,6 +51,23 @@ export { AzAuth }
  * @workInProgress
  */
 export { YggdrasilAuth }
+
+/**
+ * Authenticate a user with Kintare Account Services using OAuth2 Device Code Grant.
+ * 
+ * This is the recommended authentication method for Kintare services. It provides
+ * a user-friendly flow where users authenticate via a browser while the application
+ * polls for completion.
+ * 
+ * @example
+ * ```typescript
+ * const kintare = new KintareAuth()
+ * const device = await kintare.requestDeviceCode()
+ * console.log(`Visit ${device.verification_uri} and enter code: ${device.user_code}`)
+ * const account = await kintare.authenticate(device)
+ * ```
+ */
+export { KintareAuth }
 
 /**
  * Authenticate a user with a crack account.
@@ -89,10 +110,25 @@ export { Background }
 export { ServerStatus }
 
 /**
- * Download Java for Minecraft.
- *
- * You should not use this class if you launch Minecraft with `java.install: 'auto'` in
- * the configuration.
+ * Download and manage Java for Minecraft.
+ * 
+ * Supports multiple distributions (Mojang, Adoptium, Corretto), automatic discovery
+ * of existing Java installations, and intelligent version selection based on
+ * Minecraft requirements.
+ * 
+ * @example
+ * ```typescript
+ * const java = new Java('1.20.4', 'minecraft', { distribution: 'adoptium' })
+ * 
+ * // Discover existing Java installations
+ * const existing = await java.discover()
+ * 
+ * // Get the best match for the Minecraft version
+ * const best = await java.discoverBest()
+ * 
+ * // Download if needed
+ * await java.download()
+ * ```
  */
 export { Java }
 
@@ -101,6 +137,37 @@ export { Java }
  * @workInProgress
  */
 export { Launcher }
+
+/**
+ * Manage EML AdminTool instances with authentication support.
+ * 
+ * Handles both default and named instances, with automatic JWT token
+ * management for password-protected instances.
+ * 
+ * @example
+ * ```typescript
+ * // Default instance (backward compatible)
+ * const manager = new InstanceManager({ url: 'https://eml.example.com' }, 'my-server')
+ * 
+ * // Named instance without password
+ * const manager = new InstanceManager({ 
+ *   url: 'https://eml.example.com', 
+ *   instanceId: 'private-server' 
+ * }, 'my-server')
+ * 
+ * // Named instance with password
+ * const manager = new InstanceManager({ 
+ *   url: 'https://eml.example.com', 
+ *   instanceId: 'private-server',
+ *   password: 'secret123'
+ * }, 'my-server')
+ * 
+ * // Authenticate and fetch data
+ * await manager.ensureAuthenticated()
+ * const loader = await manager.fetch<ILoader>('/api/loader')
+ * ```
+ */
+export { InstanceManager }
 
 /**
  * ## Electron Minecraft Launcher Lib
@@ -155,6 +222,12 @@ const EMLLib = {
   YggdrasilAuth,
 
   /**
+   * Authenticate a user with Kintare Account Services using OAuth2 Device Code Grant.
+   * This is the recommended authentication method for Kintare services.
+   */
+  KintareAuth,
+
+  /**
    * Authenticate a user with a crack account.
    * @deprecated This auth method is not secure, use it only for testing purposes or for local servers!
    */
@@ -195,10 +268,9 @@ const EMLLib = {
   ServerStatus,
 
   /**
-   * Download Java for Minecraft.
-   *
-   * You should not use this class if you launch Minecraft with `java.install: 'auto'` in
-   * the configuration.
+   * Download and manage Java for Minecraft.
+   * Supports multiple distributions (Mojang, Adoptium, Corretto) and automatic
+   * discovery of existing Java installations.
    */
   Java,
 
@@ -206,7 +278,13 @@ const EMLLib = {
    * Launch Minecraft.
    * @workInProgress
    */
-  Launcher
+  Launcher,
+
+  /**
+   * Manage EML AdminTool instances with authentication support.
+   * Handles both default and named instances with JWT token management.
+   */
+  InstanceManager
 }
 
 export default EMLLib

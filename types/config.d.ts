@@ -1,12 +1,29 @@
 import { Account } from './account'
+import { Instance } from './instance'
 
 export interface Config {
   /**
    * [Optional but strongly recommended!] The URL of your EML AdminTool website, where is stored your
    * modpack and loader info. If you don't set this value, the launcher will use the vanilla version
    * of Minecraft (loaders such as Forge are only available through the EML AdminTool).
+   * 
+   * Can be either:
+   * - A string URL for the default instance (e.g., `'https://eml.mydomain.com'`)
+   * - An Instance object for named instances with optional authentication
+   * 
+   * @example
+   * // Default instance (backward compatible)
+   * url: 'https://eml.mydomain.com'
+   * 
+   * @example
+   * // Named instance without password
+   * url: { url: 'https://eml.mydomain.com', instanceId: 'my-server' }
+   * 
+   * @example
+   * // Named instance with password protection
+   * url: { url: 'https://eml.mydomain.com', instanceId: 'private-server', password: 'secret123' }
    */
-  url?: string
+  url?: string | Instance
   /**
    * Your Minecraft server ID (eg. `'minecraft'`). This will be used to create the
    * server folder (eg. `.minecraft`).
@@ -80,6 +97,16 @@ export interface Config {
      */
     install?: 'auto' | 'manual'
     /**
+     * [Optional: default is `'mojang'`]
+     * The Java distribution to download. Options:
+     * - `'mojang'` - Official Mojang Java runtime (recommended for vanilla)
+     * - `'adoptium'` - Eclipse Temurin (Adoptium) - good community option
+     * - `'corretto'` - Amazon Corretto - stable, enterprise-grade
+     * 
+     * Note: Adoptium and Corretto don't provide Java 5/6, so Java 8 is used as minimum.
+     */
+    distribution?: 'mojang' | 'adoptium' | 'corretto'
+    /**
      * [Optional: default is `undefined`]
      * The absolute path to the Java executable.
      * If you use a manual installation of Java with a custom path, you can set it here. Be careful
@@ -150,6 +177,8 @@ export interface Config {
 
 export interface FullConfig {
   url: string
+  instanceId: string | null
+  password: string | null
   serverId: string
   root: string
   cleaning: {
@@ -163,6 +192,7 @@ export interface FullConfig {
   }
   java: {
     install: 'auto' | 'manual'
+    distribution: 'mojang' | 'adoptium' | 'corretto'
     absolutePath: string
     args: string[]
   }

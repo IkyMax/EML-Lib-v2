@@ -16,31 +16,40 @@ import AdmZip from 'adm-zip'
 import EventEmitter from '../utils/events'
 import { FilesManagerEvents } from '../../types/events'
 import Java from '../java/java'
+import { InstanceManager } from '../utils/instance'
 
 export default class FilesManager extends EventEmitter<FilesManagerEvents> {
   private config: FullConfig
   private manifest: MinecraftManifest
   private loader: ILoader
+  private instanceManager?: InstanceManager
 
-  constructor(config: FullConfig, manifest: MinecraftManifest, loader: ILoader) {
+  constructor(config: FullConfig, manifest: MinecraftManifest, loader: ILoader, instanceManager?: InstanceManager) {
     super()
     this.config = config
     this.manifest = manifest
     this.loader = loader
+    this.instanceManager = instanceManager
   }
 
   /**
    * Get Java files.
+   * - For Mojang distribution: Downloads exact Java from Minecraft's manifest (javaVersion.component)
+   * - For Adoptium/Corretto: Returns empty (handled separately via Java.download() after discovery)
    * @returns `java`: Java files; `files`: all files created by the method or that will be created
    * (including `java`).
    */
   async getJava() {
     if (this.config.java.install === 'auto') {
-      const java = await new Java(this.manifest.id, this.config.serverId).getFiles(this.manifest)
-      return { java: java, files: java }
-    } else {
-      return { java: [], files: [] }
+      // Only Mojang provides per-file downloads from Minecraft's manifest
+      // Adoptium/Corretto are handled by Launcher.launch() after discovery check
+      if (this.config.java.distribution === 'mojang' || !this.config.java.distribution) {
+        const java = new Java(this.manifest.id, this.config.serverId, { distribution: 'mojang' })
+        const files = await java.getFiles(this.manifest)
+        return { java: files, files: files }
+      }
     }
+    return { java: [], files: [] }
   }
 
   /**
@@ -51,12 +60,20 @@ export default class FilesManager extends EventEmitter<FilesManagerEvents> {
   async getModpack() {
     if (!this.config.url) return { modpack: [], files: [] }
 
-    const modpack = await fetch(`${this.config.url}/api/files-updater`)
-      .then((res) => res.json())
-      .then((res) => res.files as File[])
-      .catch((err) => {
-        throw new EMLLibError(ErrorType.FETCH_ERROR, `Failed to fetch modpack files: ${err}`)
-      })
+    let modpack: File[]
+    if (this.instanceManager) {
+      // Use InstanceManager for authenticated fetch
+      const res = await this.instanceManager.fetch<{ files: File[] }>('/api/files-updater')
+      modpack = res.files
+    } else {
+      // Direct fetch for backward compatibility
+      modpack = await fetch(`${this.config.url}/api/files-updater`)
+        .then((res) => res.json())
+        .then((res) => res.files as File[])
+        .catch((err) => {
+          throw new EMLLibError(ErrorType.FETCH_ERROR, `Failed to fetch modpack files: ${err}`)
+        })
+    }
 
     return { modpack: modpack, files: modpack }
   }

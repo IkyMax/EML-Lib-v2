@@ -1,19 +1,27 @@
 {
-  "name": "eml-lib",
-  "version": "2.0.0-beta.18",
-  "description": "Create your Electron Minecraft Launcher easily!",
-  "author": "GoldFrite",
+  "name": "eml-lib-kintare",
+  "version": "2.0.0-beta.18-kintare-1.0.0",
+  "description": "Create your Electron Minecraft Launcher easily!, with built-in support for Kintare Account Services",
+  "author": "GoldFrite (Forked by KintareStudio)",
   "license": "MIT",
   "main": "index.js",
   "types": "index.d.ts",
   "scripts": {
     "build": "tsc",
     "test": "ts-node test/test.ts",
+    "test:java": "ts-node test/test-java.ts",
+    "test:java-download": "ts-node test/test-java-download.ts",
+    "test:java-download:mojang": "ts-node test/test-java-download.ts --mojang-only",
+    "test:java-download:adoptium": "ts-node test/test-java-download.ts --adoptium-only",
+    "test:java-download:corretto": "ts-node test/test-java-download.ts --corretto-only",
+    "test:kintare": "ts-node test/test-kintare.ts",
+    "test:yggdrasil": "ts-node test/test-yggdrasil.ts",
+    "test:all": "npm run test:java && npm run test:kintare && npm run test:yggdrasil",
     "test-electron": "npm run build && electron dist/test/test.js"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Electron-Minecraft-Launcher/EML-Lib-v2.git"
+    "url": "git+https://github.com/KintareStudio/EML-Lib-Kintare.git"
   },
   "keywords": [
     "electron",
@@ -24,9 +32,9 @@
     "mods"
   ],
   "bugs": {
-    "url": "https://github.com/Electron-Minecraft-Launcher/EML-Lib-v2/issues"
+    "url": "https://github.com/KintareStudio/EML-Lib-Kintare/issues"
   },
-  "homepage": "https://github.com/Electron-Minecraft-Launcher/EML-Lib-v2#readme",
+  "homepage": "https://github.com/KintareStudio/EML-Lib-Kintare#readme",
   "dependencies": {
     "@electron/remote": "^2.1.2",
     "adm-zip": "^0.5.14",

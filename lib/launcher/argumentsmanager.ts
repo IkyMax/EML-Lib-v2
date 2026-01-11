@@ -14,22 +14,40 @@ export default class ArgumentsManager {
   private manifest: MinecraftManifest
   private loaderManifest: MinecraftManifest | null
   private loader: ILoader | null
+  private adminToolJavaArgs: string[]
+  private lokiAgentPath: string | null
+  private lokiEnforceSecureProfile: boolean
 
-  constructor(config: FullConfig, manifest: MinecraftManifest) {
+  constructor(config: FullConfig, manifest: MinecraftManifest, adminToolJavaArgs: string[] = []) {
     this.config = config
     this.manifest = manifest
     this.loaderManifest = null
     this.loader = null
+    this.adminToolJavaArgs = adminToolJavaArgs
+    this.lokiAgentPath = null
+    this.lokiEnforceSecureProfile = true
   }
 
   /**
    * Get the arguments to launch the game.
    * @param libraries The libraries of the game (including loader libraries).
+   * @param loader The loader info.
+   * @param loaderManifest The loader manifest.
+   * @param lokiAgentPath Optional path to the Kintare Loki Java agent.
+   * @param lokiEnforceSecureProfile Whether Loki should enforce secure profile (default true).
    * @returns The arguments to launch the game.
    */
-  getArgs(libraries: ExtraFile[], loader: ILoader | null, loaderManifest: MinecraftManifest | null = null) {
+  getArgs(
+    libraries: ExtraFile[], 
+    loader: ILoader | null, 
+    loaderManifest: MinecraftManifest | null = null, 
+    lokiAgentPath: string | null = null,
+    lokiEnforceSecureProfile: boolean = true
+  ) {
     this.loaderManifest = loaderManifest
     this.loader = loader
+    this.lokiAgentPath = lokiAgentPath
+    this.lokiEnforceSecureProfile = lokiEnforceSecureProfile
 
     const jvmArgs = this.getJvmArgs(libraries)
     const mainClass = this.getMainClass()
@@ -43,7 +61,8 @@ export default class ArgumentsManager {
     const libraryDirectory = path_.join(this.config.root, 'libraries').replaceAll('\\', '/')
     const classpath = this.getClasspath(libraries)
 
-    let args: string[] = this.config.java?.args || []
+    // Start with AdminTool args, then local config args (local takes precedence for duplicates)
+    let args: string[] = [...this.adminToolJavaArgs, ...(this.config.java?.args || [])]
 
     if (this.manifest.arguments?.jvm) {
       ;[...this.manifest.arguments.jvm, ...(this.loaderManifest?.arguments!.jvm || [])].forEach((arg) => {
@@ -71,6 +90,7 @@ export default class ArgumentsManager {
     }
 
     args.push(...this.getLog4jArgs())
+    args.push(...this.getLokiArgs())
     args.push('-Xmx${max_memory}M')
     args.push('-Xms${min_memory}M')
     args.push('-Dfml.ignoreInvalidMinecraftCertificates=true')
@@ -103,6 +123,24 @@ export default class ArgumentsManager {
       args.push('-Dlog4j.configurationFile=log4j2_112-116.xml')
     } else if (+this.manifest.id.split('.')[1] <= 11 && +this.manifest.id.split('.')[1] >= 7) {
       args.push('-Dlog4j.configurationFile=log4j2_17-111.xml')
+    }
+
+    return args
+  }
+
+  /**
+   * Get Kintare Loki Java agent arguments.
+   * Adds -javaagent and -DLoki.enforce_secure_profile if Loki is configured.
+   * Only applies when account type is Kintare or Yggdrasil.
+   */
+  private getLokiArgs() {
+    let args: string[] = []
+
+    if (this.lokiAgentPath) {
+      // Add javaagent argument with the path to kintare-loki.jar
+      args.push(`-javaagent:${this.lokiAgentPath.replaceAll('\\', '/')}`)
+      // Add Loki configuration (value from AdminTool, defaults to true)
+      args.push(`-DLoki.enforce_secure_profile=${this.lokiEnforceSecureProfile}`)
     }
 
     return args

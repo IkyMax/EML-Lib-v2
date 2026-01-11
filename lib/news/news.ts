@@ -5,6 +5,8 @@
 
 import { EMLLibError, ErrorType } from '../../types/errors'
 import { INews, INewsCategory } from '../../types/news'
+import { InstanceManager } from '../utils/instance'
+import { Instance } from '../../types/instance'
 
 /**
  * Manage the News of the Launcher.
@@ -13,12 +15,19 @@ import { INews, INewsCategory } from '../../types/news'
  */
 export default class News {
   private readonly url: string
+  private readonly instanceManager: InstanceManager | null = null
 
   /**
-   * @param url The URL of your EML AdminTool website.
+   * @param url The URL of your EML AdminTool website, or an Instance object for named instances.
+   * @param serverId Optional server ID for token storage (required for Instance objects).
    */
-  constructor(url: string) {
-    this.url = `${url}/api`
+  constructor(url: string | Instance, serverId?: string) {
+    if (typeof url === 'string') {
+      this.url = `${url}/api`
+    } else {
+      this.url = '' // Will use InstanceManager
+      this.instanceManager = new InstanceManager(url, serverId || 'default')
+    }
   }
 
   /**
@@ -26,6 +35,12 @@ export default class News {
    * @returns The list of News.
    */
   async getNews() {
+    if (this.instanceManager) {
+      await this.instanceManager.ensureAuthenticated()
+      const res = await this.instanceManager.fetch<{ news: INews[] }>('/api/news')
+      return res.news
+    }
+
     let res = await fetch(`${this.url}/news`, { method: 'GET' })
       .then((res) => res.json())
       .catch((err) => {
@@ -40,6 +55,11 @@ export default class News {
    * @returns The list of News categories.
    */
   async getCategories() {
+    if (this.instanceManager) {
+      await this.instanceManager.ensureAuthenticated()
+      return await this.instanceManager.fetch<INewsCategory[]>('/api/news/categories')
+    }
+
     let res = await fetch(`${this.url}/news/categories`, { method: 'GET' })
       .then((res) => res.json())
       .catch((err) => {

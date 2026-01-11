@@ -1,3 +1,13 @@
+/**
+ * Represents a Yggdrasil player profile.
+ */
+export interface YggdrasilProfile {
+  /** Player username */
+  name: string
+  /** UUID of the account (hexadecimal string without dashes) */
+  id: string
+}
+
 export interface Account {
   name: string
   uuid: string
@@ -5,8 +15,8 @@ export interface Account {
   clientToken: string
   refreshToken?: string
   userProperties?: any
-  availableProfiles?: any
-  meta: { online: boolean; type: 'msa' | 'azuriom' | 'yggdrasil' | 'crack' }
+  availableProfiles?: YggdrasilProfile[]
+  meta: { online: boolean; type: 'msa' | 'azuriom' | 'yggdrasil' | 'kintare' | 'crack' }
   xbox?: {
     xuid: string
     gamertag: string
