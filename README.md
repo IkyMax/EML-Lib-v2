@@ -6,6 +6,12 @@
 [<img src="https://img.shields.io/badge/platforms-Windows%2C%20macOS%2C%20Linux-0077DA?style=for-the-badge&color=0077DA">](#platforms)
 [<img src="https://img.shields.io/badge/version-2.0.0--beta.10-orangered?style=for-the-badge&color=orangered">](package.json)
 
+<p>
+<center>
+  <img src="./.github/assets/gg.png" alt="EML AdminTool Logo" width="300"/>
+</center>
+</p>
+
 ---
 
 ## Features
