@@ -14,7 +14,7 @@ import utils from '../../utils/utils'
 import EventEmitter from '../../utils/events'
 import { FilesManagerEvents } from '../../../types/events'
 
-export default class ForgeLoader extends EventEmitter<FilesManagerEvents> {
+export default class ForgeLikeLoader extends EventEmitter<FilesManagerEvents> {
   private readonly config: FullConfig
   private readonly manifest: MinecraftManifest
   private readonly loader: ILoader
@@ -27,24 +27,26 @@ export default class ForgeLoader extends EventEmitter<FilesManagerEvents> {
   }
 
   /**
-   * Setup Forge loader.
+   * Setup Forge or NeoForge loader.
    * @returns `loaderManifest`: Loader manifest; `installProfile`: Install profile; `libraries`: libraries
    * to download; `files`: all files created by this method or that will be created (including `libraries`)
    */
   async setup() {
-    const forgePath = path_.join(this.config.root, this.loader.file.path)
+    const loaderPath = path_.join(this.config.root, this.loader.file.path)
     const minecraftPath = path_.join(this.config.root, 'versions', this.manifest.id)
-    const zip = new AdmZip(path_.join(forgePath, this.loader.file.name))
+    const zip = new AdmZip(path_.join(loaderPath, this.loader.file.name))
     const jar = new AdmZip(path_.join(minecraftPath, `${this.manifest.id}.jar`))
 
-    if (!existsSync(forgePath)) {
-      await fs.mkdir(forgePath, { recursive: true })
+    if (!existsSync(loaderPath)) {
+      await fs.mkdir(loaderPath, { recursive: true })
     }
 
-    return this.loader.format !== 'INSTALLER' ? await this.extractZip(forgePath, minecraftPath, zip, jar) : await this.extractJar(forgePath, zip)
+    return this.loader.format !== 'INSTALLER' ? await this.extractZip(loaderPath, minecraftPath, zip, jar) : await this.extractJar(loaderPath, zip)
   }
 
-  private async extractZip(forgePath: string, minecraftPath: string, zip: AdmZip, jar: AdmZip) {
+  private async extractZip(loaderPath: string, minecraftPath: string, zip: AdmZip, jar: AdmZip) {
+    const loaderId = this.loader.type.toLowerCase()
+
     let files: File[] = []
     let i = 0
 
@@ -63,17 +65,19 @@ export default class ForgeLoader extends EventEmitter<FilesManagerEvents> {
       })
     })
 
-    const forgeManifest = { ...this.manifest, id: `forge-${this.loader.loaderVersion}`, libraries: [] }
+    const loaderManifest = { ...this.manifest, id: `${loaderId}-${this.loader.loaderVersion}`, libraries: [] }
 
-    files.push({ name: `${forgeManifest.id}.json`, path: this.loader.file!.path, url: '', type: 'OTHER' })
-    await fs.writeFile(path_.join(forgePath, `${forgeManifest.id}.json`), JSON.stringify(forgeManifest, null, 2))
+    files.push({ name: `${loaderManifest.id}.json`, path: this.loader.file!.path, url: '', type: 'OTHER' })
+    await fs.writeFile(path_.join(loaderPath, `${loaderManifest.id}.json`), JSON.stringify(loaderManifest, null, 2))
 
     this.emit('extract_end', { amount: i })
 
-    return { loaderManifest: forgeManifest, installProfile: null, libraries: [], files: files }
+    return { loaderManifest: loaderManifest, installProfile: null, libraries: [], files: files }
   }
 
-  private async extractJar(forgePath: string, zip: AdmZip) {
+  private async extractJar(loaderPath: string, zip: AdmZip) {
+    const loaderId = this.loader.type.toLowerCase()
+
     let files: File[] = []
     let libraries: ExtraFile[] = []
     let i = 0
@@ -81,18 +85,21 @@ export default class ForgeLoader extends EventEmitter<FilesManagerEvents> {
     //* Extract install profile
     let installProfileEntry = zip.getEntry('install_profile.json')
     let installProfile = JSON.parse(installProfileEntry?.getData().toString('utf8') + '')
-    let forgeManifest: MinecraftManifest
+    let loaderManifest: MinecraftManifest
 
     if (installProfile.install) {
-      forgeManifest = installProfile.versionInfo
+      loaderManifest = installProfile.versionInfo
       installProfile = installProfile.install
     } else {
       const jsonEntry = zip.getEntry(path_.basename(installProfile.json))
-      forgeManifest = JSON.parse(jsonEntry?.getData().toString('utf8') + '')
+      loaderManifest = JSON.parse(jsonEntry?.getData().toString('utf8') + '')
     }
 
-    await fs.writeFile(path_.join(forgePath, `forge-${this.loader.loaderVersion}.json`), JSON.stringify(forgeManifest, null, 2))
-    files.push({ name: `forge-${this.loader.loaderVersion}.json`, path: this.loader.file!.path, url: '', type: 'OTHER' })
+    const jsonName = `${loaderId}-${this.loader.loaderVersion}.json`
+    
+    await fs.writeFile(path_.join(loaderPath, jsonName), JSON.stringify(loaderManifest, null, 2))
+    files.push({ name: jsonName, path: this.loader.file!.path, url: '', type: 'OTHER' })
+
     i++
     this.emit('extract_progress', { filename: 'install_profile.json' })
 
@@ -138,24 +145,48 @@ export default class ForgeLoader extends EventEmitter<FilesManagerEvents> {
     }
 
     if (installProfile.processors && installProfile.processors.length > 0) {
-      const universalMaven = installProfile.libraries.find((lib: any) => (lib.name + '').startsWith('net.minecraftforge:forge:'))
+      const universalMaven = installProfile.libraries.find(
+        (lib: any) => (lib.name + '').startsWith('net.minecraftforge:forge:') || (lib.name + '').startsWith('net.neoforged:neoforge:')
+      )
+
       const clientDataName = utils.getLibraryName(installProfile.path ?? universalMaven.name).replace('.jar', '-clientdata.lzma')
       const clientDataPath = utils.getLibraryPath(installProfile.path ?? universalMaven.name)
       const clientDataExtractPath = path_.join(this.config.root, 'libraries', clientDataPath)
-      const clientData = zip.getEntry('data/client.lzma')!.getData()
+      const clientDataEntry = zip.getEntry('data/client.lzma')
 
-      if (!existsSync(clientDataExtractPath)) await fs.mkdir(clientDataExtractPath, { recursive: true })
+      if (clientDataEntry) {
+        if (!existsSync(clientDataExtractPath)) await fs.mkdir(clientDataExtractPath, { recursive: true })
+        await fs.writeFile(path_.join(clientDataExtractPath, clientDataName), clientDataEntry.getData())
+        files.push({ name: clientDataName, path: path_.join('libraries', clientDataPath), url: '', type: 'LIBRARY' })
+        i++
+        this.emit('extract_progress', { filename: clientDataName })
+      }
+    }
 
-      await fs.writeFile(path_.join(clientDataExtractPath, clientDataName), clientData)
-      files.push({ name: clientDataName, path: path_.join('libraries', clientDataPath), url: '', type: 'LIBRARY' })
-      i++
+    if (installProfile.data?.PATCHED) {
+      const entry = installProfile.data.PATCHED
+      const rawValue = entry.client || entry.path || (typeof entry === 'string' ? entry : '')
 
-      this.emit('extract_progress', { filename: clientDataName })
+      if (rawValue && rawValue.startsWith('[')) {
+        const cleanLib = rawValue.replace('[', '').replace(']', '')
+        const patchName = utils.getLibraryName(cleanLib)
+        const patchPath = utils.getLibraryPath(cleanLib)
+
+        libraries.push({
+          name: patchName,
+          path: path_.join('libraries', patchPath),
+          url: '',
+          sha1: '',
+          size: 0,
+          type: 'LIBRARY',
+          extra: 'INSTALL'
+        })
+      }
     }
 
     //* Get libraries
     const [libsLoader, libsInstall] = await Promise.all([
-      this.formatLibraries(forgeManifest.libraries, 'LOADER', installProfile),
+      this.formatLibraries(loaderManifest.libraries, 'LOADER', installProfile),
       installProfile.libraries ? this.formatLibraries(installProfile.libraries, 'INSTALL', installProfile) : Promise.resolve([])
     ])
 
@@ -165,30 +196,33 @@ export default class ForgeLoader extends EventEmitter<FilesManagerEvents> {
 
     this.emit('extract_end', { amount: i })
 
-    return { loaderManifest: forgeManifest, installProfile: installProfile, libraries: libraries, files: files }
+    return { loaderManifest: loaderManifest, installProfile: installProfile, libraries: libraries, files: files }
   }
 
   private async getMirrorUrl(lib: any) {
-    const mirrors = lib.url ? [lib.url] : ['https://libraries.minecraft.net', 'https://maven.minecraftforge.net/', 'https://maven.creeperhost.net/']
+    const mirrors = lib.url
+      ? [lib.url]
+      : [
+          'https://libraries.minecraft.net',
+          'https://maven.minecraftforge.net/',
+          'https://maven.neoforged.net/releases/',
+          'https://maven.creeperhost.net/'
+        ]
 
     for (const mirror of mirrors) {
       const url = `${mirror}${utils.getLibraryPath(lib.name!).replaceAll('\\', '/')}${utils.getLibraryName(lib.name!)}`
-
       try {
         const sizeReq = await fetch(url, { method: 'HEAD' })
         if (!sizeReq.ok) continue
         const size = parseInt(sizeReq.headers.get('Content-Length') ?? '0', 10)
-
         const sha1Req = await fetch(`${url}.sha1`)
         if (!sha1Req.ok) continue
         const sha1 = await sha1Req.text()
-
         return { url: url, size: size, sha1: sha1 }
       } catch {
         continue
       }
     }
-
     return { url: '', size: 0, sha1: '' }
   }
 
@@ -206,8 +240,8 @@ export default class ForgeLoader extends EventEmitter<FilesManagerEvents> {
       }
 
       let artifact = lib.downloads?.artifact
-      let name: string = ''
-      let path: string = ''
+      let name = ''
+      let path = ''
       let url = ''
       let sha1 = ''
       let size = 0
@@ -234,15 +268,7 @@ export default class ForgeLoader extends EventEmitter<FilesManagerEvents> {
         size = mirror.size
       }
 
-      return {
-        name: name,
-        path: path,
-        url: url,
-        sha1: sha1,
-        size: size,
-        type: type,
-        extra: extra
-      } as ExtraFile
+      return { name, path, url, sha1, size, type, extra } as ExtraFile
     })
 
     const results = await Promise.all(promises)
