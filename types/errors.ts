@@ -30,6 +30,7 @@ export const ErrorType = {
   FILE_ERROR: 'FILE_ERROR',
   EXEC_ERROR: 'EXEC_ERROR',
   JAVA_ERROR: 'JAVA_ERROR',
+  PATCHER_ERROR: 'PATCHER_ERROR',
   MINECRAFT_ERROR: 'MINECRAFT_ERROR',
   // Hytale-specific error types
   INSTALL_ERROR: 'INSTALL_ERROR',
@@ -52,6 +53,7 @@ export type ErrorCode =
   | typeof ErrorType.FILE_ERROR
   | typeof ErrorType.EXEC_ERROR
   | typeof ErrorType.JAVA_ERROR
+  | typeof ErrorType.PATCHER_ERROR
   | typeof ErrorType.MINECRAFT_ERROR
   | typeof ErrorType.INSTALL_ERROR
   | typeof ErrorType.VERIFY_ERROR

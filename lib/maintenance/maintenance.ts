@@ -10,7 +10,7 @@ import type { Instance } from '../../types/instance'
 
 /**
  * Manage the Maintenance of the Launcher.
- * 
+ *
  * **Attention!** This class only works with the EML AdminTool. Please do not use it without the AdminTool.
  */
 export default class Maintenance {
@@ -33,22 +33,30 @@ export default class Maintenance {
   /**
    * Get the current Maintenance status from the EML AdminTool.
    * @returns `null` if there is no maintenance, otherwise it will return the maintenance status.
+   * You can check the `startTime` and `endTime` properties to see if the maintenance is active.
    */
   async getMaintenance() {
-    let res: any
-    
-    if (this.instanceManager) {
-      await this.instanceManager.ensureAuthenticated()
-      res = await this.instanceManager.fetch<any>('/api/maintenance')
-    } else {
-      res = await fetch(`${this.url}/maintenance`, { method: 'GET' })
-        .then((res) => res.json())
-        .catch((err) => {
-          throw new EMLLibError(ErrorType.FETCH_ERROR, `Error while fetching Maintenance from the EML AdminTool: ${err}`)
-        })
-    }
+    try {
+      let data: IMaintenance
+      
+      if (this.instanceManager) {
+        await this.instanceManager.ensureAuthenticated()
+        data = await this.instanceManager.fetch<IMaintenance>('/api/maintenance')
+      } else {
+        const req = await fetch(`${this.url}/maintenance`)
 
-    if (res.startTime) return res as IMaintenance
-    else return null
+        if (!req.ok) {
+          const errorText = await req.text()
+          throw new EMLLibError(ErrorType.FETCH_ERROR, `Error while fetching maintenance status: HTTP ${req.status} ${errorText}`)
+        }
+        data = await req.json()
+      }
+
+      if (data.startTime) return data
+      else return null
+    } catch (err: unknown) {
+      if (err instanceof EMLLibError) throw err
+      throw new EMLLibError(ErrorType.FETCH_ERROR, `Error while fetching maintenance status: ${err instanceof Error ? err.message : err}`)
+    }
   }
 }

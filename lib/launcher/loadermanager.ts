@@ -8,8 +8,9 @@ import type { FilesManagerEvents, PatcherEvents } from '../../types/events'
 import type { ExtraFile, File, ILoader } from '../../types/file'
 import type { MinecraftManifest } from '../../types/manifest'
 import EventEmitter from '../utils/events'
-import ForgeLoader from './loaders/forgeloader'
 import Patcher from './loaders/patcher'
+import ForgeLikeLoader from './loaders/forgelike'
+import FabricLikeLoader from './loaders/fabriclike'
 
 export default class LoaderManager extends EventEmitter<FilesManagerEvents & PatcherEvents> {
   private readonly config: FullConfig
@@ -31,10 +32,14 @@ export default class LoaderManager extends EventEmitter<FilesManagerEvents & Pat
   async setupLoader() {
     let setup = { loaderManifest: null as null | MinecraftManifest, installProfile: null as any, libraries: [] as ExtraFile[], files: [] as File[] }
 
-    if (this.loader.type === 'FORGE') {
-      const forgeLoader = new ForgeLoader(this.config, this.manifest, this.loader)
-      forgeLoader.forwardEvents(this)
-      setup = await forgeLoader.setup()
+    if (this.loader.type === 'FORGE' || this.loader.type === 'NEOFORGE') {
+      const forgeLikeLoader = new ForgeLikeLoader(this.config, this.manifest, this.loader)
+      forgeLikeLoader.forwardEvents(this)
+      setup = await forgeLikeLoader.setup()
+    } else if (this.loader.type === 'FABRIC' || this.loader.type === 'QUILT') {
+      const fabricLikeLoader = new FabricLikeLoader(this.config, this.manifest, this.loader)
+      fabricLikeLoader.forwardEvents(this)
+      setup = await fabricLikeLoader.setup()
     }
 
     return setup
@@ -46,7 +51,7 @@ export default class LoaderManager extends EventEmitter<FilesManagerEvents & Pat
    * @returns `files`: all files created by the method.
    */
   async patchLoader(installProfile: any) {
-    if (this.loader.type === 'FORGE' && installProfile) {
+    if ((this.loader.type === 'FORGE' || this.loader.type === 'NEOFORGE') && installProfile) {
       const patcher = new Patcher(this.config, this.manifest, this.loader, installProfile)
       patcher.forwardEvents(this)
       return { files: await patcher.patch() }

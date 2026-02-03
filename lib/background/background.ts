@@ -10,7 +10,7 @@ import type { Instance } from '../../types/instance'
 
 /**
  * Manage the background of the Launcher.
- * 
+ *
  * **Attention!** This class only works with the EML AdminTool. Please do not use it without the AdminTool.
  */
 export default class Background {
@@ -35,19 +35,25 @@ export default class Background {
    * @returns The current Background object, or `null` if no background is set.
    */
   async getBackground() {
-    if (this.instanceManager) {
-      await this.instanceManager.ensureAuthenticated()
-      const res = await this.instanceManager.fetch<IBackground>('/api/background')
-      return res ?? null
+    try {
+      if (this.instanceManager) {
+        await this.instanceManager.ensureAuthenticated()
+        const res = await this.instanceManager.fetch<IBackground>('/api/background')
+        return res ?? null
+      }
+
+      const req = await fetch(`${this.url}/background`)
+      
+      if (!req.ok) {
+        const errorText = await req.text()
+        throw new EMLLibError(ErrorType.FETCH_ERROR, `Error while fetching background: HTTP ${req.status} ${errorText}`)
+      }
+      const data: IBackground | null = await req.json()
+
+      return data ?? null
+    } catch (err: unknown) {
+      if (err instanceof EMLLibError) throw err
+      throw new EMLLibError(ErrorType.FETCH_ERROR, `Error while fetching background: ${err instanceof Error ? err.message : err}`)
     }
-
-    const res = await fetch(`${this.url}/background`)
-      .then((res) => res.json() as Promise<IBackground>)
-      .catch((err) => {
-        throw new EMLLibError(ErrorType.FETCH_ERROR, `Error while fetching backgrounds: ${err}`)
-      })
-
-    return res ?? null
   }
 }
-

@@ -10,7 +10,7 @@ import type { Instance } from '../../types/instance'
 
 /**
  * Manage the News of the Launcher.
- * 
+ *
  * **Attention!** This class only works with the EML AdminTool. Please do not use it without the AdminTool.
  */
 export default class News {
@@ -35,19 +35,26 @@ export default class News {
    * @returns The list of News.
    */
   async getNews() {
-    if (this.instanceManager) {
-      await this.instanceManager.ensureAuthenticated()
-      const res = await this.instanceManager.fetch<{ news: INews[] }>('/api/news')
-      return res.news
+    try {
+      if (this.instanceManager) {
+        await this.instanceManager.ensureAuthenticated()
+        const res = await this.instanceManager.fetch<{ news: INews[] }>('/api/news')
+        return res.news
+      }
+
+      const req = await fetch(`${this.url}/news`)
+
+      if (!req.ok) {
+        const errorText = await req.text()
+        throw new EMLLibError(ErrorType.FETCH_ERROR, `Error while fetching News from the EML AdminTool: HTTP ${req.status} ${errorText}`)
+      }
+      const data: { news: INews[] } = await req.json()
+
+      return data.news
+    } catch (err: unknown) {
+      if (err instanceof EMLLibError) throw err
+      throw new EMLLibError(ErrorType.FETCH_ERROR, `Error while fetching News from the EML AdminTool: ${err instanceof Error ? err.message : err}`)
     }
-
-    let res = await fetch(`${this.url}/news`, { method: 'GET' })
-      .then((res) => res.json())
-      .catch((err) => {
-        throw new EMLLibError(ErrorType.FETCH_ERROR, `Error while fetching News from the EML AdminTool: ${err}`)
-      })
-
-    return res.news as INews[]
   }
 
   /**
@@ -55,18 +62,29 @@ export default class News {
    * @returns The list of News categories.
    */
   async getCategories() {
-    if (this.instanceManager) {
-      await this.instanceManager.ensureAuthenticated()
-      return await this.instanceManager.fetch<INewsCategory[]>('/api/news/categories')
+    try {
+      if (this.instanceManager) {
+        await this.instanceManager.ensureAuthenticated()
+        const res = await this.instanceManager.fetch<{ categories: INewsCategory[] }>('/api/news/categories')
+        return res.categories
+      }
+
+      const req = await fetch(`${this.url}/news/categories`)
+
+      if (!req.ok) {
+        const errorText = await req.text()
+        throw new EMLLibError(ErrorType.FETCH_ERROR, `Error while fetching News Categories from the EML AdminTool: HTTP ${req.status} ${errorText}`)
+      }
+      const data: { categories: INewsCategory[] } = await req.json()
+
+      return data.categories
+    } catch (err: unknown) {
+      if (err instanceof EMLLibError) throw err
+      throw new EMLLibError(
+        ErrorType.FETCH_ERROR,
+        `Error while fetching News Categories from the EML AdminTool: ${err instanceof Error ? err.message : err}`
+      )
     }
-
-    let res = await fetch(`${this.url}/news/categories`, { method: 'GET' })
-      .then((res) => res.json())
-      .catch((err) => {
-        throw new EMLLibError(ErrorType.FETCH_ERROR, `Error while fetching News Categories from the EML AdminTool: ${err}`)
-      })
-
-    return res as INewsCategory[]
   }
 
   /**
@@ -77,14 +95,14 @@ export default class News {
    */
   async getNewsByCategory(categoryId: number) {
     return [] as INews[] // Currently not used in the EML AdminTool, but may be used in the future.
-    let res = await fetch(`${this.url}/news/categories/${categoryId}`, { method: 'GET' })
-      .then((res) => res.json())
-      .catch((err) => {
-        throw new EMLLibError(ErrorType.FETCH_ERROR, `Error while fetching News Categories from the EML AdminTool: ${err}`)
-      })
+    // let res = await fetch(`${this.url}/news/categories/${categoryId}`)
+    //   .then((res) => res.json())
+    //   .catch((err) => {
+    //     throw new EMLLibError(ErrorType.FETCH_ERROR, `Error while fetching News Categories from the EML AdminTool: ${err}`)
+    //   })
 
-    if (res.status === 404) res.data = []
+    // if (res.status === 404) res.data = []
 
-    return res.data as INews[]
+    // return res.data as INews[]
   }
 }
