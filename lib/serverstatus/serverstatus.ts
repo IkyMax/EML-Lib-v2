@@ -5,7 +5,7 @@
  */
 
 import * as net from 'node:net'
-import type { ServerStatus as ServerStatus_ } from '../../types/status'
+import type { IServerStatus } from '../../types/status'
 import { EMLLibError, ErrorType } from '../../types/errors'
 import BufferWriter from './bufferwriter'
 import BufferReader from './bufferreader'
@@ -46,7 +46,7 @@ export default class ServerStatus {
    * Get the status of the Minecraft server.
    * @returns The Server status.
    */
-  async getStatus(): Promise<ServerStatus_> {
+  async getStatus(): Promise<IServerStatus> {
     return new Promise((resolve, reject) => {
       const bufWriter = new BufferWriter()
       const start = Date.now()

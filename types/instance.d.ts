@@ -23,8 +23,18 @@ export interface Instance {
    * Optional password for protected instances.
    * If the instance requires authentication, this password is used to obtain a JWT token.
    * The token is then stored and used for all subsequent requests.
+   * 
+   * Note: Prefer using `token` if you already have one, to avoid storing passwords.
    */
   password?: string
+
+  /**
+   * Optional pre-authenticated JWT token for protected instances.
+   * If provided, this token is used directly without needing a password.
+   * This is the preferred way to authenticate - store the token externally
+   * (e.g., in launcher config) so deleting the game folder doesn't lose access.
+   */
+  token?: string
 }
 
 /**

@@ -3,10 +3,10 @@
  * @copyright Copyright (c) 2026, GoldFrite
  */
 
-import { FullConfig } from '../../types/config'
-import { FilesManagerEvents, PatcherEvents } from '../../types/events'
-import { ExtraFile, File, ILoader } from '../../types/file'
-import { MinecraftManifest } from '../../types/manifest'
+import type { FullConfig } from '../../types/config'
+import type { FilesManagerEvents, PatcherEvents } from '../../types/events'
+import type { ExtraFile, File, ILoader } from '../../types/file'
+import type { MinecraftManifest } from '../../types/manifest'
 import EventEmitter from '../utils/events'
 import ForgeLoader from './loaders/forgeloader'
 import Patcher from './loaders/patcher'

@@ -3,8 +3,8 @@
  * @copyright Copyright (c) 2025, IkyMax
  */
 
-import { Account } from '../../types/account'
-import { YggdrasilProfile } from '../../types/account'
+import type { Account } from '../../types/account'
+import type { YggdrasilProfile } from '../../types/account'
 import { EMLLibError, ErrorType } from '../../types/errors'
 import { v4 } from 'uuid'
 
@@ -14,7 +14,7 @@ import { v4 } from 'uuid'
  */
 export default class Yggdrasil {
   /** Kintare Yggdrasil Server URL */
-  private static readonly BASE_URL = 'http://localhost:3005'
+  private static readonly BASE_URL = 'https://authserver.kintare.studio'
 
   /**
    * Creates a new Yggdrasil authentication instance.
@@ -75,37 +75,24 @@ export default class Yggdrasil {
   /**
    * Validate a user with Yggdrasil.
    * @param user The user account to validate.
-   * @returns The renewed account information.
+   * @returns True if the token is valid, false otherwise (then you should call `refresh()`).
    */
-  async validate(user: Account): Promise<Account> {
-    const res = await fetch(`${Yggdrasil.BASE_URL}/validate`, {
+  async validate(user: Account): Promise<boolean> {
+    try {
+      const res = await fetch(`${Yggdrasil.BASE_URL}/validate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           accessToken: user.accessToken,
           clientToken: user.clientToken
         })
-    })
-    if (res.status === 204) {
-        return user;
+      })
+      
+      return res.status === 204
+    } catch {
+      return false
     }
-    
-    if (res.status === 403) {
-        try {
-            return await this.refresh(user);
-        
-        } catch (err: any) {
-            throw new EMLLibError(
-                ErrorType.AUTH_ERROR,
-                `Yggdrasil validate failed: ${err.message ?? err}`
-            )
-        }
-    }
-    throw new EMLLibError(
-        ErrorType.AUTH_ERROR,
-        `Yggdrasil validate failed: unexpected status ${res.status}`
-    )
-}
+  }
 
   /**
    * Refresh the Yggdrasil user.

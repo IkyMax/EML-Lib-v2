@@ -3,11 +3,11 @@
  * @copyright Copyright (c) 2026, GoldFrite
  */
 
-import { FullConfig } from '../../types/config'
-import { MinecraftManifest } from '../../types/manifest'
+import type { FullConfig } from '../../types/config'
+import type { MinecraftManifest } from '../../types/manifest'
 import utils from '../utils/utils'
 import path_ from 'node:path'
-import { ExtraFile, ILoader } from '../../types/file'
+import type { ExtraFile, ILoader } from '../../types/file'
 
 export default class ArgumentsManager {
   private config: FullConfig
@@ -132,6 +132,7 @@ export default class ArgumentsManager {
    * Get Kintare Loki Java agent arguments.
    * Adds -javaagent and -DLoki.enforce_secure_profile if Loki is configured.
    * Only applies when account type is Kintare or Yggdrasil.
+   * For Forge loaders, also adds -DLoki.disable_factory=true.
    */
   private getLokiArgs() {
     let args: string[] = []
@@ -141,6 +142,10 @@ export default class ArgumentsManager {
       args.push(`-javaagent:${this.lokiAgentPath.replaceAll('\\', '/')}`)
       // Add Loki configuration (value from AdminTool, defaults to true)
       args.push(`-DLoki.enforce_secure_profile=${this.lokiEnforceSecureProfile}`)
+      // Disable factory for Forge loaders
+      if (this.loader?.type === 'FORGE') {
+        args.push('-DLoki.disable_factory=true')
+      }
     }
 
     return args
@@ -190,7 +195,13 @@ export default class ArgumentsManager {
           .replaceAll('${auth_access_token}', this.config.account.accessToken)
           .replaceAll(
             '${user_type}',
-            this.manifest.id.startsWith('1.16') && this.config.account.meta.type === 'msa' ? 'Xbox' : this.config.account.meta.type
+            // Minecraft only supports: msa, mojang, legacy
+            // Kintare and Yggdrasil services handle msa user_type
+            this.config.account.meta.type === 'msa' || 
+            this.config.account.meta.type === 'kintare' || 
+            this.config.account.meta.type === 'yggdrasil'
+              ? 'msa'
+              : this.config.account.meta.type
           )
           .replaceAll('${version_name}', this.manifest.id)
           .replaceAll('${game_directory}', gameDirectory)

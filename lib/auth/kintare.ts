@@ -3,9 +3,27 @@
  * @copyright Copyright (c) 2025, IkyMax
  */
 
-import { Account, YggdrasilProfile } from '../../types/account'
+import type { Account, YggdrasilProfile } from '../../types/account'
+import type { HytaleSessionResponse } from '../../types/hytale'
 import { EMLLibError, ErrorType } from '../../types/errors'
 import { v4 } from 'uuid'
+
+/**
+ * Hytale session endpoint URL.
+ */
+export const HYTALE_SESSION_URL = 'https://sesh.kintare.studio/game-session/new'
+
+/**
+ * Default scopes for unified launcher (Minecraft + Hytale).
+ */
+export const DEFAULT_SCOPES = [
+  'offline_access',
+  // Minecraft (Yggdrasil)
+  'Yggdrasil.PlayerProfiles.Select',
+  'Yggdrasil.Server.Join',
+  'Yggdrasil.KintareVerification.Genuine',
+  'auth:launcher'
+] as const
 
 /**
  * Device code response from the authorization server.
@@ -66,12 +84,14 @@ interface PendingDeviceCode extends DeviceCodeResponse {
  */
 export default class Kintare {
   /** Kintare Auth Server URL */
-  private static readonly AUTH_SERVER_URL = 'http://localhost:3001'
+  private static readonly AUTH_SERVER_URL = 'https://auth.kintare.studio'
   /** Kintare Services Server URL */
-  private static readonly SERVICES_URL = 'http://localhost:3002'
+  private static readonly SERVICES_URL = 'https://services.kintare.studio'
 
   private readonly options: Required<Omit<KintareAuthOptions, 'checkGenuineMinecraft'>> & { checkGenuineMinecraft: boolean }
   private pendingDeviceCode: PendingDeviceCode | null = null
+  private cancelled = false
+  private currentSleepCancel: (() => void) | null = null
 
   /**
    * @param options Configuration options for Kintare authentication.
@@ -83,11 +103,7 @@ export default class Kintare {
 
     this.options = {
       clientId: options.clientId,
-      scopes: options.scopes ?? [
-        'offline_access',
-        'Yggdrasil.PlayerProfiles.Select',
-        'Yggdrasil.Server.Join',
-      ],
+      scopes: options.scopes ?? [...DEFAULT_SCOPES],
       checkGenuineMinecraft: options.checkGenuineMinecraft ?? false,
     }
   }
@@ -173,6 +189,9 @@ const tokenUrl = `${Kintare.AUTH_SERVER_URL}/oidc/token`
       throw new EMLLibError(ErrorType.AUTH_ERROR, 'No pending device code. Call requestDeviceCode() first.')
     }
 
+    // Reset cancelled state for new polling session
+    this.cancelled = false
+
     const interval = (this.pendingDeviceCode.interval || 5) * 1000
     const expiresAt = this.pendingDeviceCode.requestedAt + (this.pendingDeviceCode.expires_in * 1000)
 
@@ -180,10 +199,22 @@ const tokenUrl = `${Kintare.AUTH_SERVER_URL}/oidc/token`
     let currentInterval = interval
 
     while (Date.now() < expiresAt) {
+      // Check if cancelled
+      if (this.cancelled) {
+        this.pendingDeviceCode = null
+        throw new EMLLibError(ErrorType.AUTH_ERROR, 'Authorization cancelled by user.')
+      }
+
       pollCount++
       onPoll?.(pollCount)
 
       const result = await this.pollOnce()
+
+      // Check if cancelled after poll
+      if (this.cancelled) {
+        this.pendingDeviceCode = null
+        throw new EMLLibError(ErrorType.AUTH_ERROR, 'Authorization cancelled by user.')
+      }
 
       if (result.success) {
         this.pendingDeviceCode = null
@@ -194,13 +225,13 @@ const tokenUrl = `${Kintare.AUTH_SERVER_URL}/oidc/token`
       switch (result.error) {
         case 'authorization_pending':
           // User hasn't authorized yet, keep waiting
-          await this.sleep(currentInterval)
+          await this.cancellableSleep(currentInterval)
           break
 
         case 'slow_down':
           // Server asked us to slow down
           currentInterval += 5000
-          await this.sleep(currentInterval)
+          await this.cancellableSleep(currentInterval)
           break
 
         case 'expired_token':
@@ -238,35 +269,35 @@ const tokenUrl = `${Kintare.AUTH_SERVER_URL}/oidc/token`
   }
 
   /**
-   * Validate an access token and fetch fresh profile data.
+   * Validate an access token by fetching the profile.
+   * 
+   * If the token is valid, getProfile() succeeds and we return the updated account.
+   * If the token is expired/invalid, getProfile() fails and we return null.
    * 
    * @param user The user account to validate.
-   * @returns The account with fresh profile data (name, uuid may have changed).
-   * @throws {EMLLibError} If token is invalid/expired. Launcher should catch and call `refresh()`.
+   * @returns Updated Account with fresh profile if valid, null otherwise (then you should call `refresh()`).
    */
-  async validate(user: Account): Promise<Account> {
-    const response = await fetch(`${Kintare.SERVICES_URL}/authserver/validate`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ accessToken: user.accessToken }),
-    })
-
-    if (response.status === 204) {
-      // Token valid - fetch fresh profile data (username may have changed)
+  async validate(user: Account): Promise<Account | null> {
+    try {
+      // If getProfile succeeds, the token is valid
       const profile = await this.getProfile(user.accessToken)
+
+      // Try to extract available profiles from JWT claims
+      let availableProfiles: YggdrasilProfile[] | undefined = user.availableProfiles
+      const claims = this.decodeJwtPayload(user.accessToken)
+      if (claims?.availableProfiles) {
+        availableProfiles = claims.availableProfiles
+      }
+
       return {
         ...user,
         name: profile.name,
         uuid: profile.id,
+        availableProfiles,
       }
+    } catch {
+      return null
     }
-
-    if (response.status === 403) {
-      // Token invalid - let launcher handle refresh
-      throw new EMLLibError(ErrorType.AUTH_ERROR, 'Access token is invalid or expired. Call refresh() to renew.')
-    }
-
-    throw new EMLLibError(ErrorType.AUTH_ERROR, `Kintare validate failed: unexpected status ${response.status}`)
   }
 
   /**
@@ -344,6 +375,51 @@ const tokenUrl = `${Kintare.AUTH_SERVER_URL}/oidc/token`
   }
 
   /**
+   * Get a Hytale game session for online play.
+   * 
+   * This fetches fresh session tokens from the Kintare session server.
+   * Session tokens should be fetched immediately before launching Hytale
+   * and are short-lived (typically expire after the game session ends).
+   * 
+   * Requires the account to have been authenticated with the `auth:launcher` scope.
+   * 
+   * @param account The Kintare account to get a session for.
+   * @returns Session tokens for Hytale authentication.
+   * @throws Error if the session request fails or account lacks required scope.
+   */
+  async getHytaleSession(account: Account): Promise<HytaleSessionResponse> {
+    if (account.meta?.type !== 'kintare') {
+      throw new EMLLibError(ErrorType.AUTH_ERROR, 'Hytale session requires a Kintare account')
+    }
+
+    if (!account.accessToken) {
+      throw new EMLLibError(ErrorType.AUTH_ERROR, 'Account has no access token for Hytale session')
+    }
+
+    const response = await fetch(HYTALE_SESSION_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${account.accessToken}`
+      },
+      body: JSON.stringify({
+        uuid: account.uuid
+      })
+    })
+
+    if (!response.ok) {
+      const error = await response.text()
+      throw new EMLLibError(
+        ErrorType.AUTH_ERROR,
+        `Hytale session request failed: ${response.status} - ${error}`
+      )
+    }
+
+    const session = await response.json() as HytaleSessionResponse
+    return session
+  }
+
+  /**
    * Build an Account object from token response.
    */
   private async buildAccount(tokens: TokenResponse): Promise<Account> {
@@ -411,14 +487,33 @@ const tokenUrl = `${Kintare.AUTH_SERVER_URL}/oidc/token`
   }
 
   /**
-   * Clear the pending device code.
+   * Clear the pending device code and cancel any ongoing polling.
    */
   clearPendingDeviceCode(): void {
+    this.cancelled = true
     this.pendingDeviceCode = null
+    // Cancel current sleep to immediately break out of polling loop
+    if (this.currentSleepCancel) {
+      this.currentSleepCancel()
+      this.currentSleepCancel = null
+    }
   }
 
-  private sleep(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms))
+  /**
+   * Cancellable sleep that can be interrupted by clearPendingDeviceCode().
+   */
+  private cancellableSleep(ms: number): Promise<void> {
+    return new Promise((resolve) => {
+      const timeoutId = setTimeout(() => {
+        this.currentSleepCancel = null
+        resolve()
+      }, ms)
+
+      this.currentSleepCancel = () => {
+        clearTimeout(timeoutId)
+        resolve()
+      }
+    })
   }
 }
 

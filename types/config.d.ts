@@ -30,6 +30,13 @@ export interface Config {
    */
   serverId: string
   /**
+   * [Optional] Custom root folder for all game data.
+   * If set, instances will be created inside this folder.
+   * Example: `'KintareLauncher'` creates `AppData/Roaming/KintareLauncher/.instanceId/`
+   * If not set, instances are created directly in AppData.
+   */
+  root?: string
+  /**
    * [Optional: default is `['runtime/', 'crash-reports/', 'logs/', 'resourcepacks/', 'resources/',
    * 'saves/', 'shaderpacks/', 'options.txt', 'optionsof.txt']`]
    * The list of paths/files to ignore when checking and cleaning the game folder, before launching

@@ -30,7 +30,12 @@ export const ErrorType = {
   FILE_ERROR: 'FILE_ERROR',
   EXEC_ERROR: 'EXEC_ERROR',
   JAVA_ERROR: 'JAVA_ERROR',
-  MINECRAFT_ERROR: 'MINECRAFT_ERROR'
+  MINECRAFT_ERROR: 'MINECRAFT_ERROR',
+  // Hytale-specific error types
+  INSTALL_ERROR: 'INSTALL_ERROR',
+  VERIFY_ERROR: 'VERIFY_ERROR',
+  MISSING_FILE: 'MISSING_FILE',
+  LAUNCH_ERROR: 'LAUNCH_ERROR'
 } as const
 
 export type ErrorCode =
@@ -48,4 +53,8 @@ export type ErrorCode =
   | typeof ErrorType.EXEC_ERROR
   | typeof ErrorType.JAVA_ERROR
   | typeof ErrorType.MINECRAFT_ERROR
+  | typeof ErrorType.INSTALL_ERROR
+  | typeof ErrorType.VERIFY_ERROR
+  | typeof ErrorType.MISSING_FILE
+  | typeof ErrorType.LAUNCH_ERROR
 

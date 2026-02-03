@@ -3,9 +3,9 @@
  * @copyright Copyright (c) 2026, GoldFrite
  */
 
-import { Instance, InstanceAuth, InstanceAuthResponse } from '../../types/instance'
+import type { Instance, InstanceAuth, InstanceAuthResponse } from '../../types/instance'
 import { EMLLibError, ErrorType } from '../../types/errors'
-import { InstanceEvents } from '../../types/events'
+import type { InstanceEvents } from '../../types/events'
 import fs from 'node:fs/promises'
 import path_ from 'node:path'
 import { existsSync } from 'node:fs'
@@ -27,15 +27,30 @@ export class InstanceManager extends EventEmitter<InstanceEvents> {
   private readonly instanceId?: string
   private password?: string
   private readonly serverId: string
+  private readonly customRoot?: string
   private token?: string
 
-  constructor(instance: Instance, serverId: string) {
+  constructor(instance: Instance, serverId: string, customRoot?: string) {
     super()
     // Normalize URL (remove trailing slash)
     this.baseUrl = instance.url.replace(/\/+$/, '')
     this.instanceId = instance.instanceId
     this.password = instance.password
     this.serverId = serverId
+    this.customRoot = customRoot
+    // Use pre-authenticated token if provided (preferred over password)
+    this.token = instance.token
+  }
+
+  /**
+   * Get the instance folder path (where game files are stored).
+   */
+  private getInstanceFolder(): string {
+    if (this.customRoot) {
+      // Sanitize root folder like Minecraft does (lowercase, dot prefix)
+      return path_.join(utils.getAppDataFolder(), utils.getServerFolderName(this.customRoot), utils.getServerFolderName(this.serverId))
+    }
+    return utils.getServerFolder(this.serverId)
   }
 
   /**
@@ -63,16 +78,26 @@ export class InstanceManager extends EventEmitter<InstanceEvents> {
 
   /**
    * Check if this instance requires authentication.
+   * Returns true only if we need credentials (password) and don't have a token.
    */
   requiresAuth(): boolean {
-    return !!this.password
+    return !!this.password && !this.token
+  }
+
+  /**
+   * Check if this instance has authentication (token or password).
+   */
+  hasAuth(): boolean {
+    return !!this.token || !!this.password
   }
 
   /**
    * Get the stored token path.
+   * Note: Tokens should preferably be stored externally (e.g., launcher config)
+   * so deleting the game folder doesn't lose access.
    */
   private getTokenPath(): string {
-    const tokenDir = path_.join(utils.getServerFolder(this.serverId), '.eml')
+    const tokenDir = path_.join(this.getInstanceFolder(), '.eml')
     const instanceKey = this.instanceId ?? 'default'
     return path_.join(tokenDir, `instance-${instanceKey}.token`)
   }
@@ -119,7 +144,7 @@ export class InstanceManager extends EventEmitter<InstanceEvents> {
       throw new EMLLibError(ErrorType.AUTH_ERROR, 'Instance requires authentication but no password provided')
     }
 
-    const authUrl = `${this.baseUrl}/api/instances/authenticate/`
+    const authUrl = `${this.baseUrl}/api/instances/authenticate`
     
     try {
       const response = await fetch(authUrl, {
@@ -173,12 +198,16 @@ export class InstanceManager extends EventEmitter<InstanceEvents> {
 
   /**
    * Ensure we have a valid token for authenticated requests.
-   * Loads from storage or authenticates if needed.
+   * Uses pre-set token, loads from storage, or authenticates if needed.
    */
   async ensureAuthenticated(): Promise<void> {
-    if (!this.requiresAuth()) return
+    // If we already have a token (from constructor or previous auth), we're done
+    if (this.token) return
+    
+    // If no password provided, nothing to authenticate with
+    if (!this.password) return
 
-    // Try to load stored token
+    // Try to load stored token from game folder (legacy support)
     const storedToken = await this.loadStoredToken()
     if (storedToken) {
       this.token = storedToken
@@ -317,7 +346,7 @@ export class InstanceManager extends EventEmitter<InstanceEvents> {
    * @param reason The reason for the auth failure.
    */
   private async handleAuthFailure(reason: string): Promise<void> {
-    const instancePath = utils.getServerFolder(this.serverId)
+    const instancePath = this.getInstanceFolder()
     
     // Emit auth failed event
     this.emit('instance_auth_failed', { 
@@ -355,6 +384,6 @@ export class InstanceManager extends EventEmitter<InstanceEvents> {
    * Get the server folder path for this instance.
    */
   getInstancePath(): string {
-    return utils.getServerFolder(this.serverId)
+    return this.getInstanceFolder()
   }
 }

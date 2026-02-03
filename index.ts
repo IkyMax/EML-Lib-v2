@@ -7,7 +7,8 @@ import MicrosoftAuth from './lib/auth/microsoft'
 import AzAuth from './lib/auth/azuriom'
 import CrackAuth from './lib/auth/crack'
 import YggdrasilAuth from './lib/auth/yggdrasil'
-import KintareAuth from './lib/auth/kintare'
+import KintareAuth, { HYTALE_SESSION_URL, DEFAULT_SCOPES } from './lib/auth/kintare'
+import type { DeviceCodeResponse } from './lib/auth/kintare'
 import Bootstraps from './lib/bootstraps/bootstraps'
 import Maintenance from './lib/maintenance/maintenance'
 import News from './lib/news/news'
@@ -15,7 +16,16 @@ import Background from './lib/background/background'
 import ServerStatus from './lib/serverstatus/serverstatus'
 import Java from './lib/java/java'
 import Launcher from './lib/launcher/launcher'
+import Manifest from './lib/manifest/manifest'
 import { InstanceManager } from './lib/utils/instance'
+
+// Hytale support
+import HytaleLauncher from './lib/launcher/hytale/launcher'
+import HytaleInstaller from './lib/launcher/hytale/installer'
+import HytalePatcher from './lib/launcher/hytale/patcher'
+import Butler from './lib/utils/butler'
+import * as HytaleChecker from './lib/launcher/hytale/checker'
+import * as HytaleConstants from './lib/launcher/hytale/constants'
 
 export type * from './types/account'
 export type * from './types/background'
@@ -30,6 +40,8 @@ export type * from './types/maintenance'
 export type * from './types/manifest'
 export type * from './types/news'
 export type * from './types/status'
+export type * from './types/hytale'
+export type { DeviceCodeResponse }
 
 /**
  * Authenticate a user with Microsoft.
@@ -110,6 +122,13 @@ export { Background }
 export { ServerStatus }
 
 /**
+ * Fetch instance manifest containing server metadata.
+ *
+ * **Attention!** This class only works with the EML AdminTool. Please do not use it without the AdminTool.
+ */
+export { Manifest }
+
+/**
  * Download and manage Java for Minecraft.
  * 
  * Supports multiple distributions (Mojang, Adoptium, Corretto), automatic discovery
@@ -168,6 +187,66 @@ export { Launcher }
  * ```
  */
 export { InstanceManager }
+
+/**
+ * Launch and manage Hytale game instances.
+ * 
+ * Orchestrates installation, JRE management, session authentication,
+ * and game process lifecycle.
+ * 
+ * @example
+ * ```typescript
+ * const launcher = new HytaleLauncher('my-server')
+ * 
+ * launcher.on('hytale_launch_start', (data) => {
+ *   console.log(`Starting Hytale build ${data.buildIndex}`)
+ * })
+ * 
+ * await launcher.launch({
+ *   instance: { id: 'main', name: 'Main Instance' },
+ *   loader: loaderFromAdminTool,
+ *   account: kintareAccount
+ * })
+ * ```
+ */
+export { HytaleLauncher }
+
+/**
+ * Install Hytale game files and JRE.
+ * 
+ * Downloads pre-patched game files from AdminTool and JRE from Hytale servers.
+ */
+export { HytaleInstaller }
+
+/**
+ * Manage Hytale online patch state.
+ * 
+ * Handles switching between patched (online-capable) and unpatched (offline) versions.
+ */
+export { HytalePatcher }
+
+/**
+ * Butler utility for PWR patch operations.
+ * 
+ * Downloads and manages the Butler tool from itch.io for delta patching.
+ * Reserved for future use when delta-patching from Hytale servers is implemented.
+ */
+export { Butler }
+
+/**
+ * Hytale game installation checker utilities.
+ */
+export { HytaleChecker }
+
+/**
+ * Hytale constants and path helpers.
+ */
+export { HytaleConstants }
+
+/**
+ * Hytale session URL for Kintare authentication.
+ */
+export { HYTALE_SESSION_URL, DEFAULT_SCOPES }
 
 /**
  * ## Electron Minecraft Launcher Lib
@@ -268,6 +347,11 @@ const EMLLib = {
   ServerStatus,
 
   /**
+   * Fetch instance manifest containing server metadata.
+   */
+  Manifest,
+
+  /**
    * Download and manage Java for Minecraft.
    * Supports multiple distributions (Mojang, Adoptium, Corretto) and automatic
    * discovery of existing Java installations.
@@ -284,7 +368,54 @@ const EMLLib = {
    * Manage EML AdminTool instances with authentication support.
    * Handles both default and named instances with JWT token management.
    */
-  InstanceManager
+  InstanceManager,
+
+  // Hytale Support
+
+  /**
+   * Launch and manage Hytale game instances.
+   * Orchestrates installation, JRE management, session authentication,
+   * and game process lifecycle.
+   */
+  HytaleLauncher,
+
+  /**
+   * Install Hytale game files and JRE.
+   * Downloads pre-patched game files from AdminTool and JRE from Hytale servers.
+   */
+  HytaleInstaller,
+
+  /**
+   * Manage Hytale online patch state.
+   * Handles switching between patched and unpatched versions.
+   */
+  HytalePatcher,
+
+  /**
+   * Butler utility for PWR patch operations.
+   * Reserved for future delta-patching support.
+   */
+  Butler,
+
+  /**
+   * Hytale game installation checker utilities.
+   */
+  HytaleChecker,
+
+  /**
+   * Hytale constants and path helpers.
+   */
+  HytaleConstants,
+
+  /**
+   * Hytale session URL for Kintare authentication.
+   */
+  HYTALE_SESSION_URL,
+
+  /**
+   * Default OAuth2 scopes for unified launcher (Minecraft + Hytale).
+   */
+  DEFAULT_SCOPES
 }
 
 export default EMLLib

@@ -5,7 +5,7 @@
 
 import type { BrowserWindow } from 'electron'
 import MicrosoftAuthGui from './microsoftgui'
-import { Account } from '../../types/account'
+import type { Account } from '../../types/account'
 import { EMLLibError, ErrorType } from '../../types/errors'
 
 /**

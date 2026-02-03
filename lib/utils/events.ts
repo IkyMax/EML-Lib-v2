@@ -14,10 +14,10 @@ type Args<K, T> = T extends DefaultEventMap ? AnyRest : K extends keyof T ? T[K]
 type AnyRest = [...args: any[]]
 
 export default class EventEmitter<T extends EventMap<T>> {
-  private readonly emitter: EM<T>
+  private readonly emitter: EM
 
   constructor() {
-    this.emitter = new EM<T>()
+    this.emitter = new EM()
   }
 
   /**
@@ -27,7 +27,7 @@ export default class EventEmitter<T extends EventMap<T>> {
    * @returns This EventEmitter instance.
    */
   on<K>(eventName: Key<K, T>, listener: Listener1<K, T>) {
-    this.emitter.on(eventName as string | symbol, listener)
+    this.emitter.on(eventName as any, listener)
     return this
   }
 
@@ -50,7 +50,7 @@ export default class EventEmitter<T extends EventMap<T>> {
    * @returns `true` if the event had listeners, `false` otherwise.
    */
   protected emit<K>(eventName: Key<K, T>, ...args: Args<K, T>) {
-    return this.emitter.emit(eventName as string | symbol, ...(args as any))
+    return this.emitter.emit(eventName as any, ...(args as any))
   }
 }
 

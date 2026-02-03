@@ -5,12 +5,12 @@
 
 import EventEmitter from '../utils/events'
 import { EMLLibError, ErrorType } from '../../types/errors'
-import { BootstrapsEvents, DownloaderEvents } from '../../types/events'
+import type { BootstrapsEvents, DownloaderEvents } from '../../types/events'
 import type { AppUpdater } from 'electron-updater'
-import { IBootstraps } from '../../types/bootstraps'
+import type { IBootstraps } from '../../types/bootstraps'
 import utils from '../utils/utils'
 import { InstanceManager } from '../utils/instance'
-import { Instance } from '../../types/instance'
+import type { Instance } from '../../types/instance'
 
 /**
  * Update your Launcher.

@@ -4,16 +4,16 @@
  */
 
 import { EMLLibError, ErrorType } from '../../types/errors'
-import type { IBackground } from '../../types/background'
+import type { IInstanceManifest } from '../../types/manifest'
 import { InstanceManager } from '../utils/instance'
 import type { Instance } from '../../types/instance'
 
 /**
- * Manage the background of the Launcher.
+ * Fetch instance manifest containing server metadata.
  * 
  * **Attention!** This class only works with the EML AdminTool. Please do not use it without the AdminTool.
  */
-export default class Background {
+export default class Manifest {
   private readonly url: string
   private readonly instanceManager: InstanceManager | null = null
 
@@ -31,23 +31,21 @@ export default class Background {
   }
 
   /**
-   * Get the current background from the EML AdminTool.
-   * @returns The current Background object, or `null` if no background is set.
+   * Get the instance manifest from the EML AdminTool.
+   * @returns The instance manifest.
    */
-  async getBackground() {
+  async getManifest(): Promise<IInstanceManifest> {
     if (this.instanceManager) {
       await this.instanceManager.ensureAuthenticated()
-      const res = await this.instanceManager.fetch<IBackground>('/api/background')
-      return res ?? null
+      return await this.instanceManager.fetch<IInstanceManifest>('/api/manifest')
     }
 
-    const res = await fetch(`${this.url}/background`)
-      .then((res) => res.json() as Promise<IBackground>)
+    let res = await fetch(`${this.url}/manifest`, { method: 'GET' })
+      .then((res) => res.json())
       .catch((err) => {
-        throw new EMLLibError(ErrorType.FETCH_ERROR, `Error while fetching backgrounds: ${err}`)
+        throw new EMLLibError(ErrorType.FETCH_ERROR, `Error while fetching Manifest from the EML AdminTool: ${err}`)
       })
 
-    return res ?? null
+    return res as IInstanceManifest
   }
 }
-

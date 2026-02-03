@@ -3,10 +3,10 @@
  * @copyright Copyright (c) 2026, GoldFrite
  */
 
-import { MinecraftManifest } from './../../types/manifest.d'
+import type { MinecraftManifest } from './../../types/manifest.d'
 import { EMLLibError, ErrorType } from '../../types/errors'
 import { JAVA_RUNTIME_URL, MINECRAFT_MANIFEST_URL } from './consts'
-import { ILoader } from '../../types/file'
+import type { ILoader } from '../../types/file'
 import { InstanceManager } from './instance'
 
 class Manifests {

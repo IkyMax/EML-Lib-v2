@@ -3,13 +3,13 @@
  * @copyright Copyright (c) 2026, GoldFrite
  */
 
-import { File } from '../../types/file'
+import type { File } from '../../types/file'
 import fsSync from 'node:fs'
 import fs from 'node:fs/promises'
 import path_ from 'node:path'
 import fetch from 'node-fetch'
 import EventEmitter from '../utils/events'
-import { DownloaderEvents } from '../../types/events'
+import type { DownloaderEvents } from '../../types/events'
 import utils from './utils'
 import { EMLLibError, ErrorType } from '../../types/errors'
 import http from 'node:http'
@@ -18,6 +18,7 @@ import https from 'node:https'
 export default class Downloader extends EventEmitter<DownloaderEvents> {
   private readonly CONCURRENCY_LIMIT = 5
   private readonly dest: string
+  private readonly authHeaders: Record<string, string>
 
   private httpAgent = new http.Agent({ keepAlive: true, maxSockets: 32 })
   private httpsAgent = new https.Agent({ keepAlive: true, maxSockets: 32 })
@@ -32,10 +33,12 @@ export default class Downloader extends EventEmitter<DownloaderEvents> {
 
   /**
    * @param dest Destination folder.
+   * @param authHeaders Optional authentication headers for private instances.
    */
-  constructor(dest: string) {
+  constructor(dest: string, authHeaders?: Record<string, string>) {
     super()
     this.dest = path_.join(dest)
+    this.authHeaders = authHeaders ?? {}
   }
 
   /**
@@ -147,7 +150,10 @@ export default class Downloader extends EventEmitter<DownloaderEvents> {
 
     const res = await fetch(file.url, {
       agent: agent,
-      headers: { Accept: 'application/octet-stream' }
+      headers: { 
+        Accept: 'application/octet-stream',
+        ...this.authHeaders
+      }
     })
 
     if (!res.ok || !res.body) {

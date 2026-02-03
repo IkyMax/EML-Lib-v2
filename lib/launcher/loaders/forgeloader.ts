@@ -3,16 +3,16 @@
  * @copyright Copyright (c) 2026, GoldFrite
  */
 
-import { FullConfig } from '../../../types/config'
-import { ExtraFile, File, ILoader } from '../../../types/file'
-import { MinecraftManifest } from '../../../types/manifest'
+import type { FullConfig } from '../../../types/config'
+import type { ExtraFile, File, ILoader } from '../../../types/file'
+import type { MinecraftManifest } from '../../../types/manifest'
 import AdmZip from 'adm-zip'
 import fs from 'node:fs/promises'
 import { existsSync } from 'node:fs'
 import path_ from 'node:path'
 import utils from '../../utils/utils'
 import EventEmitter from '../../utils/events'
-import { FilesManagerEvents } from '../../../types/events'
+import type { FilesManagerEvents } from '../../../types/events'
 
 export default class ForgeLoader extends EventEmitter<FilesManagerEvents> {
   private readonly config: FullConfig
@@ -155,8 +155,8 @@ export default class ForgeLoader extends EventEmitter<FilesManagerEvents> {
 
     //* Get libraries
     const [libsLoader, libsInstall] = await Promise.all([
-      this.formatLibraries(forgeManifest.libraries, 'LOADER', installProfile),
-      installProfile.libraries ? this.formatLibraries(installProfile.libraries, 'INSTALL', installProfile) : Promise.resolve([])
+      this.formatLibraries(forgeManifest.libraries, 'LOADER'),
+      installProfile.libraries ? this.formatLibraries(installProfile.libraries, 'INSTALL') : Promise.resolve([])
     ])
 
     libraries.push(...libsLoader)
@@ -193,7 +193,7 @@ export default class ForgeLoader extends EventEmitter<FilesManagerEvents> {
     return { url: '', size: 0, sha1: '' }
   }
 
-  private async formatLibraries(libs: MinecraftManifest['libraries'], extra: 'INSTALL' | 'LOADER', installProfile: any) {
+  private async formatLibraries(libs: MinecraftManifest['libraries'], extra: 'INSTALL' | 'LOADER') {
     const promises = libs.map(async (lib) => {
       let type: 'LIBRARY' | 'NATIVE' = 'LIBRARY'
       let native: string | undefined

@@ -4,9 +4,9 @@
  */
 
 import { EMLLibError, ErrorType } from '../../types/errors'
-import { IMaintenance } from '../../types/maintenance'
+import type { IMaintenance } from '../../types/maintenance'
 import { InstanceManager } from '../utils/instance'
-import { Instance } from '../../types/instance'
+import type { Instance } from '../../types/instance'
 
 /**
  * Manage the Maintenance of the Launcher.

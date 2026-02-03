@@ -4,17 +4,17 @@
  * @copyright Copyright (c) 2019, Pierce Harriz, from [Minecraft Launcher Core](https://github.com/Pierce01/MinecraftLauncher-core)
  */
 
-import { FullConfig } from '../../types/config'
+import type { FullConfig } from '../../types/config'
 import { EMLLibError, ErrorType } from '../../types/errors'
-import { ExtraFile, File, ILoader } from '../../types/file'
-import { Artifact, MinecraftManifest, Assets } from '../../types/manifest'
+import type { ExtraFile, File, ILoader } from '../../types/file'
+import type { Artifact, MinecraftManifest, Assets } from '../../types/manifest'
 import utils from '../utils/utils'
 import path_ from 'node:path'
 import fs from 'node:fs/promises'
 import { existsSync } from 'node:fs'
 import AdmZip from 'adm-zip'
 import EventEmitter from '../utils/events'
-import { FilesManagerEvents } from '../../types/events'
+import type { FilesManagerEvents } from '../../types/events'
 import Java from '../java/java'
 import { InstanceManager } from '../utils/instance'
 

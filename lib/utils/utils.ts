@@ -9,7 +9,7 @@ import fs from 'node:fs'
 import os from 'node:os'
 import { createHash } from 'node:crypto'
 import { pipeline } from 'node:stream/promises'
-import { ExtraFile } from '../../types/file'
+import type { ExtraFile } from '../../types/file'
 
 class Utils {
   /**
@@ -75,9 +75,18 @@ class Utils {
    * @returns The path to the server folder (eg. `'C:\Users\user\AppData\Roaming\.minecraft'`).
    */
   getServerFolder(serverId: string) {
+    return path_.join(this.getAppDataFolder(), this.getServerFolderName(serverId))
+  }
+
+  /**
+   * Get the server folder name (without the full path).
+   * @param serverId Your Minecraft server ID (eg. `'minecraft'`).
+   * @returns The sanitized folder name (eg. `'.minecraft'` on Windows/Linux, `'minecraft'` on Mac).
+   */
+  getServerFolderName(serverId: string) {
     serverId = serverId.replace(/[^a-z0-9]/gi, '_').toLowerCase()
     serverId = this.getOS() === 'mac' ? serverId : `.${serverId}`
-    return path_.join(this.getAppDataFolder(), serverId)
+    return serverId
   }
 
   /**

@@ -7,8 +7,8 @@ import EventEmitter from './events'
 import path_ from 'node:path'
 import fs from 'node:fs/promises'
 import { existsSync } from 'node:fs'
-import { CleanerEvents } from '../../types/events'
-import { File } from '../../types/file'
+import type { CleanerEvents } from '../../types/events'
+import type { File } from '../../types/file'
 
 export default class Cleaner extends EventEmitter<CleanerEvents> {
   private readonly dest: string = ''

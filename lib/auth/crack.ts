@@ -3,7 +3,7 @@
  * @copyright Copyright (c) 2026, GoldFrite
  */
 
-import { Account } from '../../types/account'
+import type { Account } from '../../types/account'
 import { EMLLibError, ErrorType } from './../../types/errors'
 import { v4 } from 'uuid'
 

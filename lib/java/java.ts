@@ -3,11 +3,11 @@
  * @copyright Copyright (c) 2026, GoldFrite
  */
 
-import { DownloaderEvents, JavaEvents } from '../../types/events'
-import { JavaDistribution, JavaOptions, JavaVersion, JvmDetails, AdoptiumJdk } from '../../types/java'
+import type { DownloaderEvents, JavaEvents } from '../../types/events'
+import type { JavaDistribution, JavaOptions, JvmDetails, AdoptiumJdk } from '../../types/java'
 import EventEmitter from '../utils/events'
 import manifests from '../utils/manifests'
-import { File } from '../../types/file'
+import type { File } from '../../types/file'
 import path_ from 'node:path'
 import fs from 'node:fs/promises'
 import fsSync from 'node:fs'
@@ -16,7 +16,7 @@ import utils from '../utils/utils'
 import { spawn, exec } from 'node:child_process'
 import { promisify } from 'node:util'
 import { EMLLibError, ErrorType } from '../../types/errors'
-import { MinecraftManifest } from '../../types/manifest'
+import type { MinecraftManifest } from '../../types/manifest'
 import AdmZip from 'adm-zip'
 
 const execAsync = promisify(exec)
@@ -373,10 +373,9 @@ export default class Java extends EventEmitter<DownloaderEvents & JavaEvents> {
     await downloader.download(files)
     
     // Emit install end (Mojang files are already extracted)
-    const jreDir = path_.join(this.getRuntimeDir(), `jre-${majorVersion}`)
     this.emit('java_install_end', {
       majorVersion,
-      path: jreDir,
+      path: path_.join(this.getRuntimeDir(), `jre-${majorVersion}`),
       filesExtracted: files.length
     })
   }
@@ -387,7 +386,6 @@ export default class Java extends EventEmitter<DownloaderEvents & JavaEvents> {
   private async downloadThirdParty(): Promise<void> {
     const majorVersion = await this.getRequiredMajorVersion()
     const runtimeDir = this.getRuntimeDir()
-    const jreDir = path_.join(runtimeDir, `jre-${majorVersion}`)
 
     let downloadInfo: { url: string; size: number; name: string } | null = null
 

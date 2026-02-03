@@ -4,16 +4,16 @@
  */
 
 import AdmZip from 'adm-zip'
-import { FullConfig } from '../../../types/config'
-import { ILoader, File } from '../../../types/file'
-import { MinecraftManifest } from '../../../types/manifest'
+import type { FullConfig } from '../../../types/config'
+import type { ILoader, File } from '../../../types/file'
+import type { MinecraftManifest } from '../../../types/manifest'
 import utils from '../../utils/utils'
 import fs from 'node:fs/promises'
 import { existsSync } from 'node:fs'
 import path_ from 'node:path'
 import { spawn } from 'node:child_process'
 import EventEmitter from '../../utils/events'
-import { PatcherEvents } from '../../../types/events'
+import type { PatcherEvents } from '../../../types/events'
 
 export default class Patcher extends EventEmitter<PatcherEvents> {
   private readonly config: FullConfig
@@ -46,15 +46,15 @@ export default class Patcher extends EventEmitter<PatcherEvents> {
       const jarExtractPathName = path_.join(this.config.root, 'libraries', utils.getLibraryPath(processor.jar), utils.getLibraryName(processor.jar))
       const args = (processor.args as string[]).map((arg) => this.mapPath(this.mapArg(arg)))
       const classpath = (processor.classpath as string[]).map(
-        (cp) => `"${path_.join(this.config.root, 'libraries', utils.getLibraryPath(cp), utils.getLibraryName(cp))}"`
+        (cp) => path_.join(this.config.root, 'libraries', utils.getLibraryPath(cp), utils.getLibraryName(cp))
       )
       const mainClass = this.getJarMain(jarExtractPathName)!
 
       await new Promise((resolve) => {
+        const javaPath = this.config.java.absolutePath.replace('${X}', this.manifest.javaVersion?.majorVersion + '' || '8')
         const patch = spawn(
-          `"${this.config.java.absolutePath.replace('${X}', this.manifest.javaVersion?.majorVersion + '' || '8')}"`,
-          ['-classpath', [`"${jarExtractPathName}"`, ...classpath].join(path_.delimiter), mainClass, ...args],
-          { shell: true }
+          javaPath,
+          ['-classpath', [jarExtractPathName, ...classpath].join(path_.delimiter), mainClass, ...args]
         )
 
         patch.stdout.on('data', (data: Buffer) => this.emit('patch_debug', data.toString('utf8').replace(/\n$/, '')))

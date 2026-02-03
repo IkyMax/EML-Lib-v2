@@ -4,9 +4,9 @@
  */
 
 import { EMLLibError, ErrorType } from '../../types/errors'
-import { INews, INewsCategory } from '../../types/news'
+import type { INews, INewsCategory } from '../../types/news'
 import { InstanceManager } from '../utils/instance'
-import { Instance } from '../../types/instance'
+import type { Instance } from '../../types/instance'
 
 /**
  * Manage the News of the Launcher.

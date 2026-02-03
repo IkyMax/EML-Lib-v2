@@ -79,7 +79,7 @@ const launcher = new Launcher({
 })
 
 // The library will:
-// 1. Authenticate with POST https://eml.mydomain.com/api/instances/
+// 1. Authenticate with POST https://eml.mydomain.com/api/instances/authentication
 // 2. Store the JWT token locally
 // 3. Use the token for all subsequent API calls
 // 4. If token expires, re-authenticate automatically using stored password
@@ -204,7 +204,7 @@ const update = await bootstraps.checkForUpdate()
 When using a password-protected named instance:
 
 1. **Token Check**: The library first checks for a stored token at `.eml/instance-{instanceId}.token`
-2. **Authentication**: If no token exists and password is available, sends a POST request to `/api/instances/`:
+2. **Authentication**: If no token exists and password is available, sends a POST request to `/api/instances/authentication`:
    ```json
    {
      "instanceId": "my-server",

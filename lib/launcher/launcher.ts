@@ -3,11 +3,11 @@
  * @copyright Copyright (c) 2026, GoldFrite
  */
 
-import { CleanerEvents, DownloaderEvents, FilesManagerEvents, InstanceEvents, JavaEvents, LauncherEvents, LokiEvents, PatcherEvents } from '../../types/events'
+import type { CleanerEvents, DownloaderEvents, FilesManagerEvents, InstanceEvents, JavaEvents, LauncherEvents, LokiEvents, PatcherEvents } from '../../types/events'
 import EventEmitter from '../utils/events'
 import manifests from '../utils/manifests'
 import utils from '../utils/utils'
-import { Config, FullConfig } from './../../types/config'
+import type { Config, FullConfig } from './../../types/config'
 import path_ from 'node:path'
 import fs from 'node:fs/promises'
 import { existsSync } from 'node:fs'
@@ -18,9 +18,9 @@ import Java from '../java/java'
 import LoaderManager from './loadermanager'
 import ArgumentsManager from './argumentsmanager'
 import { spawn } from 'node:child_process'
-import { ILokiConfig } from '../../types/file'
+import type { ILokiConfig } from '../../types/file'
 import { InstanceManager } from '../utils/instance'
-import { Instance } from '../../types/instance'
+import type { Instance } from '../../types/instance'
 
 /**
  * Launch Minecraft.
@@ -44,6 +44,7 @@ export default class Launcher extends EventEmitter<
     let baseUrl: string | undefined
     let instanceId: string | null = null
     let password: string | null = null
+    let token: string | null = null
 
     if (config.url) {
       if (typeof config.url === 'string') {
@@ -55,6 +56,7 @@ export default class Launcher extends EventEmitter<
         baseUrl = instance.url
         instanceId = instance.instanceId ?? null
         password = instance.password ?? null
+        token = instance.token ?? null
       }
     }
 
@@ -63,8 +65,9 @@ export default class Launcher extends EventEmitter<
       this.instanceManager = new InstanceManager({
         url: baseUrl,
         instanceId: instanceId ?? undefined,
-        password: password ?? undefined
-      }, config.serverId)
+        password: password ?? undefined,
+        token: token ?? undefined
+      }, config.serverId, config.root)
       
       // Forward instance events to launcher
       this.instanceManager.forwardEvents(this)
@@ -88,14 +91,21 @@ export default class Launcher extends EventEmitter<
       version: config.minecraft?.version ? config.minecraft?.version : config.url ? null : 'latest_release',
       args: config.minecraft?.args || []
     }
+    
+    // Calculate root path: custom root + serverId, or default serverId location
+    // Root is sanitized like Minecraft folders: lowercase, special chars replaced, dot prefix
+    const rootPath = config.root 
+      ? path_.join(utils.getAppDataFolder(), utils.getServerFolderName(config.root), utils.getServerFolderName(config.serverId))
+      : utils.getServerFolder(config.serverId)
+    
     config.java = {
       install: config.java?.install || 'auto',
       distribution: config.java?.distribution || 'mojang',
       absolutePath: config.java?.absolutePath
         ? config.java.absolutePath
         : config.java?.relativePath
-          ? path_.join(utils.getServerFolder(config.serverId), config.java.relativePath, '/')
-          : path_.join(utils.getServerFolder(config.serverId), 'runtime', 'jre-${X}', 'bin', 'java'),
+          ? path_.join(rootPath, config.java.relativePath, '/')
+          : path_.join(rootPath, 'runtime', 'jre-${X}', 'bin', 'java'),
       args: config.java?.args || []
     }
     config.window = {
@@ -113,7 +123,7 @@ export default class Launcher extends EventEmitter<
       url: baseUrl ?? '',
       instanceId,
       password,
-      root: utils.getServerFolder(config.serverId) 
+      root: rootPath 
     }
   }
 
@@ -145,7 +155,8 @@ export default class Launcher extends EventEmitter<
     const filesManager = new FilesManager(this.config, manifest, loader, this.instanceManager ?? undefined)
     const loaderManager = new LoaderManager(this.config, manifest, loader)
     const argumentsManager = new ArgumentsManager(this.config, manifest, adminToolJavaArgs)
-    const downloader = new Downloader(this.config.root)
+    const authHeaders = this.instanceManager?.getAuthHeaders() ?? {}
+    const downloader = new Downloader(this.config.root, authHeaders)
     const cleaner = new Cleaner(this.config.root)
     const java = new Java(manifest.id, this.config.serverId, {
       distribution: javaDistribution,
