@@ -1,22 +1,20 @@
 /**
  * @license MIT
- * @copyright Copyright (c) 2025, IkyMax
+ * @copyright Copyright (c) 2026, IkyMax, GoldFrite
  */
 
 import { Account, MultipleProfiles } from '../../types/account'
 import { EMLLibError, ErrorType } from '../../types/errors'
 
-/**
- * Authenticate a user with an [Yggdrasil-compatible](https://minecraft.wiki/w/Yggdrasil) server.
- * 
- * **Attention!** While Yggdrasil has been deprecated by Mojang/Microsoft, the API is maintained by a community 
- * who wants to keep the protocol alive. Usage of a custom authentication server may or may not violate 
- * Minecraft's Terms of Service: make sure to validate your player's Minecraft ownership!
- */
 export default class YggdrasilAuth {
   private readonly url: string
 
   /**
+   * Authenticate a user with an [Yggdrasil-compatible](https://minecraft.wiki/w/Yggdrasil) server.
+   *
+   * **Attention!** While Yggdrasil has been deprecated by Mojang/Microsoft, the API is maintained by a community
+   * who wants to keep the protocol alive. Usage of a custom authentication server may or may not violate
+   * Minecraft's Terms of Service: make sure to validate your player's Minecraft ownership!
    * @param url The URL to the Yggdrasil-compatible server.
    */
   constructor(url: string) {
@@ -30,7 +28,7 @@ export default class YggdrasilAuth {
    * @param password The password of the user.
    * @returns The account information.
    */
-  async authenticate(username: string, password: string) {
+  async auth(username: string, password: string) {
     try {
       const req = await fetch(`${this.url}/authenticate`, {
         method: 'POST',
@@ -57,7 +55,8 @@ export default class YggdrasilAuth {
           availableProfiles: data.availableProfiles,
           userProperties: data.user?.properties ?? {},
           accessToken: data.accessToken,
-          clientToken: data.clientToken
+          clientToken: data.clientToken,
+          url: this.url
         } as MultipleProfiles
       }
 
@@ -69,7 +68,8 @@ export default class YggdrasilAuth {
         userProperties: data.user?.properties ?? {},
         meta: {
           online: false,
-          type: 'yggdrasil'
+          type: 'yggdrasil',
+          url: this.url
         }
       } as Account
     } catch (err: unknown) {
@@ -79,8 +79,8 @@ export default class YggdrasilAuth {
   }
 
   /**
-   * Select a profile for a user with multiple profiles. This method is used when the `YggdrasilAuth.authenticate` method returns a `MultipleProfiles` object.
-   * @param profiles The multiple profiles information returned by the `YggdrasilAuth.authenticate` method.
+   * Select a profile for a user with multiple profiles. This method is used when the `YggdrasilAuth.auth` method returns a `MultipleProfiles` object.
+   * @param profiles The multiple profiles information returned by the `YggdrasilAuth.auth` method.
    * @param select The profile to select, either by ID or name. If both are provided, ID will be used.
    * @return The account information with the selected profile.
    */
@@ -106,7 +106,8 @@ export default class YggdrasilAuth {
       userProperties: profiles.userProperties,
       meta: {
         online: false,
-        type: 'yggdrasil'
+        type: 'yggdrasil',
+        url: profiles.url
       }
     } as Account
   }
@@ -165,7 +166,8 @@ export default class YggdrasilAuth {
           availableProfiles: data.availableProfiles,
           userProperties: data.user?.properties ?? {},
           accessToken: data.accessToken,
-          clientToken: data.clientToken
+          clientToken: data.clientToken,
+          url: this.url
         } as MultipleProfiles
         selectedProfile = this.selectProfile(res, { id: user.uuid, name: user.name })
       } else {
@@ -180,7 +182,8 @@ export default class YggdrasilAuth {
         userProperties: data.user?.properties ?? {},
         meta: {
           online: false,
-          type: 'yggdrasil'
+          type: 'yggdrasil',
+          url: this.url
         }
       } as Account
     } catch (err: unknown) {
@@ -217,5 +220,4 @@ export default class YggdrasilAuth {
     }
   }
 }
-
 
