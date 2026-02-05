@@ -3,74 +3,107 @@
  * @copyright Copyright (c) 2025, IkyMax
  */
 
-import { Account } from '../../types/account'
+import { Account, MultipleProfiles } from '../../types/account'
 import { EMLLibError, ErrorType } from '../../types/errors'
-import { v4 } from 'uuid'
 
 /**
- * Authenticate a user with an yggdrasil-compatible server (Based on [Authlib-Injector](https://github-com.translate.goog/yushijinhun/authlib-injector/wiki/Yggdrasil-%E6%9C%8D%E5%8A%A1%E7%AB%AF%E6%8A%80%E6%9C%AF%E8%A7%84%E8%8C%83?_x_tr_sl=zh-CN&_x_tr_tl=en&_x_tr_hl=es&_x_tr_pto=wapp) and [original yggdrasil](https://minecraft.wiki/w/Yggdrasil) specs).
+ * Authenticate a user with an [Yggdrasil-compatible](https://minecraft.wiki/w/Yggdrasil) server.
+ * 
+ * **Attention!** While Yggdrasil has been deprecated by Mojang/Microsoft, the API is maintained by a community 
+ * who wants to keep the protocol alive. Usage of a custom authentication server may or may not violate 
+ * Minecraft's Terms of Service: make sure to validate your player's Minecraft ownership!
  */
-export default class Yggdrasil {
+export default class YggdrasilAuth {
   private readonly url: string
 
   /**
-   * @param url The Authlib-Injector Metadata URL of your Yggdrasil server.
+   * @param url The URL to the Yggdrasil-compatible server.
    */
   constructor(url: string) {
     if (url.endsWith('/')) url = url.slice(0, -1)
-    this.url = `${url}/authserver`
+    this.url = url
   }
-
-  /**
-   * generates a clientToken for an specific user
-   */
-  async clientGen(): Promise<string> {
-  return v4();
-}
 
   /**
    * Authenticate a user with Yggdrasil.
    * @param username The username, email or player name of the user.
    * @param password The password of the user.
-   * in the future, this method is going to be superseded by an OIDC flow
    * @returns The account information.
    */
-  
-  async authenticate(username: string, password: string): Promise<Account | { needsProfileSelection: true; availableProfiles: any[]; accessToken: string; clientToken: string }> {
-    const res = await fetch(`${this.url}/authenticate`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        agent: { name: 'Minecraft', version: 1 },
-        username: username,
-        password: password,
-        clientToken: v4(),
-        requestUser: true
+  async authenticate(username: string, password: string) {
+    try {
+      const req = await fetch(`${this.url}/authenticate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          agent: { name: 'Minecraft', version: 1 },
+          username,
+          password,
+          requestUser: true
+        })
       })
-    }).then((res: any) => res.json())
 
-    if (res.status == 'error') {
-      throw new EMLLibError(ErrorType.AUTH_ERROR, `Yggdrasil authentication failed: ${res.reason}`)
+      if (!req.ok) {
+        const errorText = await req.text()
+        throw new EMLLibError(ErrorType.AUTH_ERROR, `Yggdrasil authentication failed: HTTP ${req.status} ${errorText}`)
+      }
+      const data = await req.json()
+
+      if (!data.selectedProfile) {
+        return {
+          needsProfileSelection: true,
+          availableProfiles: data.availableProfiles,
+          userProperties: data.user?.properties ?? {},
+          accessToken: data.accessToken,
+          clientToken: data.clientToken
+        } as MultipleProfiles
+      }
+
+      return {
+        name: data.selectedProfile.name,
+        uuid: data.selectedProfile.id,
+        clientToken: data.clientToken,
+        accessToken: data.accessToken,
+        userProperties: data.user?.properties ?? {},
+        meta: {
+          online: false,
+          type: 'yggdrasil'
+        }
+      } as Account
+    } catch (err: unknown) {
+      if (err instanceof EMLLibError) throw err
+      throw new EMLLibError(ErrorType.AUTH_ERROR, `Yggdrasil authentication failed: ${err instanceof Error ? err.message : err}`)
+    }
+  }
+
+  /**
+   * Select a profile for a user with multiple profiles. This method is used when the `YggdrasilAuth.authenticate` method returns a `MultipleProfiles` object.
+   * @param profiles The multiple profiles information returned by the `YggdrasilAuth.authenticate` method.
+   * @param select The profile to select, either by ID or name. If both are provided, ID will be used.
+   * @return The account information with the selected profile.
+   */
+  selectProfile(profiles: MultipleProfiles, select: { id?: string; name?: string }) {
+    if (!select.id && !select.name) {
+      throw new EMLLibError(ErrorType.AUTH_ERROR, 'Yggdrasil profile selection failed: no profile ID or name provided')
     }
 
-    if (!res.selectedProfile) {
-      return {
-        needsProfileSelection: true,
-        availableProfiles: res.availableProfiles,
-        accessToken: res.accessToken,
-        clientToken: res.clientToken
-      }
+    const profile = select.id
+      ? profiles.availableProfiles.find((p) => p.id === select.id)
+      : profiles.availableProfiles.find((p) => p.name === select.name)
+
+    if (!profile) {
+      throw new EMLLibError(ErrorType.AUTH_ERROR, `Yggdrasil profile selection failed: profile with ID/name ${select.id ?? select.name} not found`)
     }
 
     return {
-      name: res.selectedProfile.name,
-      uuid: res.selectedProfile.id,
-      clientToken: res.clientToken,
-      accessToken: res.accessToken,
-      availableProfiles: res.availableProfiles,
-      userProperties: res.user?.properties ?? [],
+      name: profile.name,
+      uuid: profile.id,
+      clientToken: profiles.clientToken,
+      accessToken: profiles.accessToken,
+      availableProfiles: profiles.availableProfiles,
+      userProperties: profiles.userProperties,
       meta: {
         online: false,
         type: 'yggdrasil'
@@ -79,102 +112,110 @@ export default class Yggdrasil {
   }
 
   /**
-   * Validate a user with Yggdrasil.
+   * Validate a user's access token with Yggdrasil. This method will check if the token is still valid.
    * @param user The user account to validate.
-   * @returns The renewed account information.
+   * @returns True if the token is valid, false otherwise (then you should call `YggdrasilAuth.refresh`).
    */
-  async validate(user: Account): Promise<Account> {
-    const res = await fetch(`${this.url}/validate`, {
+  async validate(user: Account) {
+    try {
+      const req = await fetch(`${this.url}/validate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           accessToken: user.accessToken,
           clientToken: user.clientToken
         })
-    })
-    if (res.status === 204) {
-        return user;
+      })
+
+      return req.ok
+    } catch {
+      return false
     }
-    
-    if (res.status === 403) {
-        try {
-            return await this.refresh(user);
-        
-        } catch (err: any) {
-            throw new EMLLibError(
-                ErrorType.AUTH_ERROR,
-                `Yggdrasil validate failed: ${err.message ?? err}`
-            )
-        }
-    }
-    throw new EMLLibError(
-        ErrorType.AUTH_ERROR,
-        `Yggdrasil validate failed: unexpected status ${res.status}`
-    )
-}
+  }
 
   /**
    * Refresh the Yggdrasil user.
    * @param user The user account or credentials to refresh.
-   * @param selectedProfile Optional profile selection for multi-profile accounts.
    * @returns The renewed account information.
    */
-  async refresh(
-    user: Account | { accessToken: string; clientToken: string },
-    selectedProfile?: { id: string; name: string }
-  ): Promise<Account> {
-    const payload: any = {
-      accessToken: user.accessToken,
-      clientToken: user.clientToken,
-      requestUser: true
-    }
+  async refresh(user: Account) {
+    try {
+      const req = await fetch(`${this.url}/refresh`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          accessToken: user.accessToken,
+          clientToken: user.clientToken,
+          requestUser: true
+        })
+      })
 
-    if (selectedProfile) {
-      payload.selectedProfile = selectedProfile
-    }
-
-    const res = await fetch(`${this.url}/refresh`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(payload)
-    }).then((res: any) => res.json())
-
-    if (res.status == 'error') {
-      throw new EMLLibError(ErrorType.AUTH_ERROR, `Yggdrasil refresh failed: ${res.reason}`)
-    }
-
-    return {
-      name: res.selectedProfile.name,
-      uuid: res.selectedProfile.id,
-      clientToken: res.clientToken,
-      accessToken: res.accessToken,
-      availableProfiles: res.availableProfiles,
-      userProperties: res.user?.properties ?? [],
-      meta: {
-        online: false,
-        type: 'yggdrasil'
+      if (!req.ok) {
+        const errorText = await req.text()
+        throw new EMLLibError(ErrorType.AUTH_ERROR, `Yggdrasil refresh failed: HTTP ${req.status} ${errorText}`)
       }
-    } as Account
+      const data = await req.json()
+
+      let selectedProfile
+      if (!data.selectedProfile) {
+        const res = {
+          needsProfileSelection: true,
+          availableProfiles: data.availableProfiles,
+          userProperties: data.user?.properties ?? {},
+          accessToken: data.accessToken,
+          clientToken: data.clientToken
+        } as MultipleProfiles
+        selectedProfile = this.selectProfile(res, { id: user.uuid, name: user.name })
+      } else {
+        selectedProfile = data.selectedProfile
+      }
+
+      return {
+        name: selectedProfile.name,
+        uuid: selectedProfile.id,
+        clientToken: data.clientToken,
+        accessToken: data.accessToken,
+        userProperties: data.user?.properties ?? {},
+        meta: {
+          online: false,
+          type: 'yggdrasil'
+        }
+      } as Account
+    } catch (err: unknown) {
+      if (err instanceof EMLLibError) throw err
+      throw new EMLLibError(ErrorType.AUTH_ERROR, `Yggdrasil refresh failed: ${err instanceof Error ? err.message : err}`)
+    }
   }
 
   /**
    * Logout a user from Yggdrasil.
-   * invalidate is preferred over sign out as sign out invalidates all sessions
-   * and invalidate only the current one.
+   * @remarks This method use `invalidate`. `invalidate` is preferred over `signout` as `signout` invalidates
+   * all sessions and `invalidate` invalidates only the current one.
    * @param user The user account to logout.
    */
   async logout(user: Account) {
-    await fetch(`${this.url}/invalidate`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        accessToken: user.accessToken,
-        clientToken: user.clientToken
+    try {
+      const req = await fetch(`${this.url}/invalidate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          accessToken: user.accessToken
+        })
       })
-    })
+
+      if (!req.ok) {
+        const errorText = await req.text()
+        throw new EMLLibError(ErrorType.AUTH_ERROR, `Yggdrasil logout failed: HTTP ${req.status} ${errorText}`)
+      }
+    } catch (err: unknown) {
+      if (err instanceof EMLLibError) throw err
+      throw new EMLLibError(ErrorType.AUTH_ERROR, `Yggdrasil logout failed: ${err instanceof Error ? err.message : err}`)
+    }
   }
 }
+
+

@@ -40,11 +40,11 @@ export { MicrosoftAuth }
 export { AzAuth }
 
 /**
- * Authenticate a user with an yggdrasil-compatible server (Based on [Authlib-Injector](https://github-com.translate.goog/yushijinhun/authlib-injector/wiki/Yggdrasil-%E6%9C%8D%E5%8A%A1%E7%AB%AF%E6%8A%80%E6%9C%AF%E8%A7%84%E8%8C%83?_x_tr_sl=zh-CN&_x_tr_tl=en&_x_tr_hl=es&_x_tr_pto=wapp) and [original yggdrasil](https://minecraft.wiki/w/Yggdrasil) specs).
- * **Attention!** While yggdrasil has been depracated by mojang, the API is maintained by a community who wants to keep the protocol alive and a migration to OIDC is on the works.
- * usage of a custom authserver may or may not violate Minecraft's Terms of Service according to this [Mojang email](https://github.com/unmojang/drasl/issues/106#issuecomment-2408930094)
- * make sure to validate your player's minecraft ownership!
- * @workInProgress
+ * Authenticate a user with an [Yggdrasil-compatible](https://minecraft.wiki/w/Yggdrasil) server.
+ * 
+ * **Attention!** While Yggdrasil has been deprecated by Mojang/Microsoft, the API is maintained by a community 
+ * who wants to keep the protocol alive. Usage of a custom authentication server may or may not violate 
+ * Minecraft's Terms of Service: make sure to validate your player's Minecraft ownership!
  */
 export { YggdrasilAuth }
 
@@ -146,11 +146,11 @@ const EMLLib = {
   AzAuth,
 
   /**
-   * Authenticate a user with an yggdrasil-compatible server (Based on [Authlib-Injector](https://github-com.translate.goog/yushijinhun/authlib-injector/wiki/Yggdrasil-%E6%9C%8D%E5%8A%A1%E7%AB%AF%E6%8A%80%E6%9C%AF%E8%A7%84%E8%8C%83?_x_tr_sl=zh-CN&_x_tr_tl=en&_x_tr_hl=es&_x_tr_pto=wapp) and [original yggdrasil](https://minecraft.wiki/w/Yggdrasil) specs).
-   * **Attention!** While yggdrasil has been depracated by mojang, the API is maintained by a community who wants to keep the protocol alive and a migration to OIDC is on the works.
-   * usage of a custom authserver may or may not violate Minecraft's Terms of Service according to this [Mojang email](https://github.com/unmojang/drasl/issues/106#issuecomment-2408930094)
-   * make sure to validate your player's minecraft ownership!
-   * @workInProgress
+    * Authenticate a user with an [Yggdrasil-compatible](https://minecraft.wiki/w/Yggdrasil) server.
+ * 
+ * **Attention!** While Yggdrasil has been deprecated by Mojang/Microsoft, the API is maintained by a community 
+ * who wants to keep the protocol alive. Usage of a custom authentication server may or may not violate 
+ * Minecraft's Terms of Service: make sure to validate your player's Minecraft ownership!
    */
   YggdrasilAuth,
 
@@ -208,5 +208,6 @@ const EMLLib = {
    */
   Launcher
 }
+
 
 export default EMLLib
