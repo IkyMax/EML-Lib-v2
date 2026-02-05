@@ -27,7 +27,7 @@ async function main() {
 }
 
 async function _main() {
-  let acc = await new EMLLib.YggdrasilAuth('http://localhost:25585').auth('GoldFrite', '')
+  let acc = await new EMLLib.YggdrasilAuth('http://localhost:25585').auth('GoldFrite', 'password')
   if ('needsProfileSelection' in acc) {
     acc = new EMLLib.YggdrasilAuth('http://localhost:25585').selectProfile(acc, { name: 'GoldFrite' })
   }
