@@ -54,6 +54,7 @@ export default class ArgumentsManager {
     let args: string[] = this.config.java?.args || []
 
     if (customAuth) {
+      args.push('-Djava.net.preferIPv4Stack=true')
       args.push(`-javaagent:${customAuth.injectorPath}=${customAuth.authServerUrl}`)
     }
 
